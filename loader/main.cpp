@@ -191,6 +191,7 @@ int main(int argc, char* argv[])
   LoaderWindow * mainwin = new LoaderWindow();
   mainwin->setMultipleTransactions(multitrans);
   mainwin->setDebugPkg(debugpkg);
+  mainwin->setCmdline(autoRunArg);
   if (! pkgfile.isEmpty())
   {
     autoRunCheck = mainwin->openFile(pkgfile);

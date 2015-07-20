@@ -46,10 +46,16 @@ macx {
 }
 
 FORMS   += loaderwindow.ui
-HEADERS += loaderwindow.h
-SOURCES += loaderwindow.cpp \
-           main.cpp
 
-QT += xml sql
+HEADERS += loaderwindow.h               \
+           cmdlinemessagehandler.h      \
+           guimessagehandler.h
+
+SOURCES += loaderwindow.cpp             \
+           main.cpp                     \
+           cmdlinemessagehandler.cpp    \
+           guimessagehandler.cpp
+
+QT += xml sql xmlpatterns
 
 RESOURCES += loader.qrc

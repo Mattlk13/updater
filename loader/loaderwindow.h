@@ -20,6 +20,8 @@ class TarFile;
 
 #include "ui_loaderwindow.h"
 
+class LoaderWindowPrivate;
+
 class LoaderWindow : public QMainWindow, public Ui::LoaderWindow
 {
     Q_OBJECT
@@ -35,6 +37,7 @@ public slots:
     virtual void helpContents();
     virtual void helpAbout();
 
+    virtual void setCmdline(bool);
     virtual void setMultipleTransactions(bool);
     virtual void setDebugPkg(bool);
     virtual bool openFile(QString filename);
@@ -63,6 +66,8 @@ private:
 
     int disableTriggers();
     int enableTriggers();
+
+    LoaderWindowPrivate *_p;
 
 };
 
