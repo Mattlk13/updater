@@ -1,7 +1,7 @@
 /*
  * This file is part of the xTuple ERP: PostBooks Edition, a free and
  * open source Enterprise Resource Planning software suite,
- * Copyright (c) 1999-2012 by OpenMFG LLC, d/b/a xTuple.
+ * Copyright (c) 1999-2015 by OpenMFG LLC, d/b/a xTuple.
  * It is licensed to you under the Common Public Attribution License
  * version 1.0, the full text of which (including xTuple-specific Exhibits)
  * is available at www.xtuple.com/CPAL.  By using this software, you agree
@@ -34,12 +34,13 @@ class Prerequisite;
 class Script;
 class FinalScript;
 class InitScript;
+class XAbstractMessageHandler;
 
 class Package
 {
   public:
     Package(const QString & id = QString::null);
-    Package(const QDomElement &, QStringList &, QList<bool> &);
+    Package(const QDomElement &, QStringList &, QList<bool> &, XAbstractMessageHandler *);
 
     virtual ~Package();
 

@@ -1,7 +1,7 @@
 /*
  * This file is part of the xTuple ERP: PostBooks Edition, a free and
  * open source Enterprise Resource Planning software suite,
- * Copyright (c) 1999-2012 by OpenMFG LLC, d/b/a xTuple.
+ * Copyright (c) 1999-2015 by OpenMFG LLC, d/b/a xTuple.
  * It is licensed to you under the Common Public Attribution License
  * version 1.0, the full text of which (including xTuple-specific Exhibits)
  * is available at www.xtuple.com/CPAL.  By using this software, you agree
@@ -32,6 +32,7 @@
 #include "script.h"
 #include "finalscript.h"
 #include "initscript.h"
+#include "xabstractmessagehandler.h"
 #include "xsqlquery.h"
 #include "xversion.h"
 
@@ -43,7 +44,7 @@ Package::Package(const QString & id)
 }
 
 Package::Package(const QDomElement & elem, QStringList &msgList,
-                 QList<bool> &fatalList)
+                 QList<bool> &fatalList, XAbstractMessageHandler *handler)
 {
   if (elem.tagName() != "package")
   {
@@ -152,10 +153,11 @@ Package::Package(const QDomElement & elem, QStringList &msgList,
       _initscripts.append(new InitScript(elemThis, msgList, fatalList));
     else if (! reportedErrorTags.contains(elemThis.tagName()))
     {
-      QMessageBox::warning(0, TR("Unknown Package Element"),
-                           TR("This package contains an element '%1'. "
-                              "The application does not know how to "
-                              "process it and so it will be ignored.")
+      if (handler)
+        handler->message(QtWarningMsg,
+                         TR("This package contains an element '%1'. "
+                            "The application does not know how to "
+                            "process it and so it will be ignored.")
                            .arg(elemThis.tagName()));
       reportedErrorTags << elemThis.tagName();
     }

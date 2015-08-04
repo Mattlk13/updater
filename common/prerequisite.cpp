@@ -1,7 +1,7 @@
 /*
  * This file is part of the xTuple ERP: PostBooks Edition, a free and
  * open source Enterprise Resource Planning software suite,
- * Copyright (c) 1999-2012 by OpenMFG LLC, d/b/a xTuple.
+ * Copyright (c) 1999-2015 by OpenMFG LLC, d/b/a xTuple.
  * It is licensed to you under the Common Public Attribution License
  * version 1.0, the full text of which (including xTuple-specific Exhibits)
  * is available at www.xtuple.com/CPAL.  By using this software, you agree
@@ -13,8 +13,10 @@
 #include <QDomDocument>
 #include <QList>
 #include <QSqlError>
+#include <QVariant>
 
-#include "licensewindow.h"
+#include "errorReporter.h"
+#include "xabstractmessagehandler.h"
 #include "xsqlquery.h"
 
 #define TR(a) QObject::tr(a)
@@ -262,7 +264,7 @@ QStringList Prerequisite::typeList(bool includeNone)
   return list;
 }
 
-bool Prerequisite::met(QString &errMsg)
+bool Prerequisite::met(QString &errMsg, XAbstractMessageHandler *handler)
 {
   if (DEBUG)
     qDebug("Prerequisite::met() name %s, type %d (%s), message %s, "
@@ -302,27 +304,25 @@ bool Prerequisite::met(QString &errMsg)
       {
       bool headlessUpdate = false;
       XSqlQuery metricCheck;
-      metricCheck.prepare("SELECT metric_value FROM metric WHERE metric_name='headlessUpdate';");
+      metricCheck.prepare("SELECT fetchMetricBool('headlessUpdate') AS result;");
       metricCheck.exec();
       if(metricCheck.first())
       {
-          headlessUpdate = metricCheck.value("metric_value").toBool();
-      }
-      else if (metricCheck.lastError().type() != QSqlError::NoError)
-      {
-          errMsg = _sqlerrtxt.arg(metricCheck.lastError().databaseText())
-                             .arg(metricCheck.lastError().driverText());
-      }
-      if(!headlessUpdate)
-      {
-      LicenseWindow newdlg(_message);
-      returnVal = (newdlg.exec() == QDialog::Accepted);
-      if (! returnVal)
-        errMsg = TR("The user declined to accept the usage license.");
+          headlessUpdate = metricCheck.value("result").toBool();
       }
       else
       {
-          returnVal = true;
+        ErrorReporter::error(QtCriticalMsg, 0, TR("Database Error"), metricCheck,
+                             __FILE__, __LINE__);
+      }
+      if(!headlessUpdate)
+      {
+        returnVal = handler->question(TR("<h1>Do you accept this license agreement?</h1><br/>%1")
+                                      .arg(_message),
+                                      QMessageBox::Yes | QMessageBox::No, QMessageBox::No) == QMessageBox::Yes;
+        if (! returnVal) {
+          errMsg = TR("The user declined to accept the usage license.");
+        }
       }
       break;
       }

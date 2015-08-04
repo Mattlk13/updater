@@ -1,7 +1,7 @@
 #
 # This file is part of the xTuple ERP: PostBooks Edition, a free and
 # open source Enterprise Resource Planning software suite,
-# Copyright (c) 1999-2012 by OpenMFG LLC, d/b/a xTuple.
+# Copyright (c) 1999-2015 by OpenMFG LLC, d/b/a xTuple.
 # It is licensed to you under the Common Public Attribution License
 # version 1.0, the full text of which (including xTuple-specific Exhibits)
 # is available at www.xtuple.com/CPAL.  By using this software, you agree
@@ -19,8 +19,6 @@ OBJECTS_DIR = tmp
 MOC_DIR = tmp
 UI_SOURCES_DIR = tmp
 
-FORMS   = licensewindow.ui
-
 HEADERS = data.h \
           package.h \
           createdbobj.h \
@@ -31,7 +29,6 @@ HEADERS = data.h \
           finalscript.h \
           initscript.h \
           script.h \
-          licensewindow.h \
           loadable.h \
           loadappscript.h \
           loadappui.h \
@@ -42,6 +39,9 @@ HEADERS = data.h \
           loadreport.h \
           pkgschema.h \
           prerequisite.h \
+          xabstractmessagehandler.h    \
+          cmdlinemessagehandler.h      \
+          guimessagehandler.h          \
           xversion.h
 
 SOURCES = data.cpp \
@@ -64,6 +64,9 @@ SOURCES = data.cpp \
           loadreport.cpp \
           pkgschema.cpp \
           prerequisite.cpp \
+          xabstractmessagehandler.cpp  \
+          cmdlinemessagehandler.cpp    \
+          guimessagehandler.cpp        \
           xversion.cpp
 
-QT += xml sql
+QT += xml sql xmlpatterns

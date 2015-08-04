@@ -1,7 +1,7 @@
 /*
  * This file is part of the xTuple ERP: PostBooks Edition, a free and
  * open source Enterprise Resource Planning software suite,
- * Copyright (c) 1999-2012 by OpenMFG LLC, d/b/a xTuple.
+ * Copyright (c) 1999-2015 by OpenMFG LLC, d/b/a xTuple.
  * It is licensed to you under the Common Public Attribution License
  * version 1.0, the full text of which (including xTuple-specific Exhibits)
  * is available at www.xtuple.com/CPAL.  By using this software, you agree
@@ -273,7 +273,7 @@ bool LoaderWindow::openFile(QString pfilename)
   _text->setEnabled(true);
 
   QString delayedWarning;
-  _package = new Package(doc.documentElement(), msgList, fatalList);
+  _package = new Package(doc.documentElement(), msgList, fatalList, _p->handler);
   if (msgList.size() > 0)
   {
     bool fatal = false;
@@ -336,33 +336,33 @@ bool LoaderWindow::openFile(QString pfilename)
   bool allOk = true;
   // check prereqs
   QString str;
-  QStringList strlist;
-  QStringList::Iterator slit;
   XSqlQuery qry;
-  for(QList<Prerequisite*>::iterator i = _package->_prerequisites.begin();
-      i != _package->_prerequisites.end(); ++i)
+  foreach (Prerequisite *i, _package->_prerequisites)
   {
-    _p->handler->message(QtDebugMsg, tr("<p><b>Checking Prerequisites!</b></p><p>%1...</p>")
-                       .arg((*i)->name()));
-    _p->handler->message(QtWarningMsg, tr("%1").arg((*i)->name()));
-    if (! (*i)->met(errMsg))
+    _p->handler->message(QtDebugMsg,
+                         tr("<p><b>Checking Prerequisites!</b></p><p>%1...</p>")
+                           .arg(i->name()));
+    _p->handler->message(QtWarningMsg, tr("%1").arg(i->name()));
+    if (! i->met(errMsg, _p->handler))
     {
       allOk = false;
-      str = QString("<blockquote><font size=\"+1\" color=\"red\"><b>%1</b></font></blockquote>").arg(tr("Failed"));
+      str = QString("<blockquote><font size='+1' color='red'>"
+                    "<b>%1</b></font>"
+                    "</blockquote>").arg(tr("Failed"));
       if (! errMsg.isEmpty())
        str += tr("<p>%1</p>").arg(errMsg);
 
-      strlist = (*i)->providerList();
-      if(strlist.count() > 0)
+      QStringList strlist = i->providerList();
+      if (! strlist.isEmpty())
       {
-        str += tr("<b>Requires:</b><br>");
-        str += tr("<ul>");
-        for(slit = strlist.begin(); slit != strlist.end(); ++slit)
-          str += tr("<li>%1: %2</li>").arg((*i)->provider(*slit).package()).arg((*i)->provider(*slit).info());
-        str += tr("</ul>");
+        str += tr("<b>Requires:</b><br>"
+                  "<ul>");
+        foreach (QString slit, strlist)
+          str += tr("<li>%1: %2</li>").arg(i->provider(slit).package(), i->provider(slit).info());
+        str += "</ul>";
       }
       
-      str += tr("</blockquote>");
+      str += "</blockquote>";
       _p->handler->message(QtWarningMsg, str);
       if (DEBUG)
         qDebug("%s", qPrintable(str));

@@ -15,8 +15,8 @@ CONFIG += qt warn_on thread
 
 DESTDIR = ../bin
 
-QMAKE_LIBDIR += ../lib $${OPENRPT_LIBDIR}
-LIBS += -lupdatercommon -lopenrptcommon -lrenderer -lMetaSQL
+QMAKE_LIBDIR += $${UPDATER_LIBDIR} $${OPENRPT_LIBDIR} $${XTUPLE_LIBDIR}
+LIBS += -lxtuplecommon -lupdatercommon -lopenrptcommon -lrenderer -lMetaSQL
 win32-msvc* {
   PRE_TARGETDEPS += $${UPDATER_LIBDIR}/updatercommon.lib          \
                     $${OPENRPT_LIBDIR}/MetaSQL.$${OPENRPTLIBEXT}       \
@@ -50,5 +50,5 @@ SOURCES += main.cpp \
            queryeditor.cpp \
            newprereqdialog.cpp
 
-QT += xml qt3support sql
+QT += xml qt3support sql xmlpatterns
 

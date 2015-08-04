@@ -105,7 +105,7 @@ void PackageWindow::fileOpen()
     }
     QStringList msgList;
     QList<bool> fatalList;
-    _package = new Package(doc.documentElement(), msgList, fatalList);
+    _package = new Package(doc.documentElement(), msgList, fatalList, 0);
 
     _prereqs->clear();
     sPrereqSelectionChanged();
