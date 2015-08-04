@@ -41,7 +41,8 @@ CreateTrigger::CreateTrigger(const QDomElement &elem, QStringList &msg, QList<bo
   }
 }
 
-int CreateTrigger::writeToDB(const QByteArray &pdata, const QString pkgname, QString &errMsg)
+int CreateTrigger::writeToDB(const QByteArray &pdata, const QString pkgname,
+                             ParameterList &params, QString &errMsg)
 {
   if (DEBUG)
     qDebug("CreateTrigger::writeToDb(%s, %s, &errMsg)",
@@ -53,7 +54,6 @@ int CreateTrigger::writeToDB(const QByteArray &pdata, const QString pkgname, QSt
                              "  AND  (tgrelid=pg_class.oid)"
                              "  AND  (relnamespace=pg_namespace.oid)"
                              "  AND  (nspname=<? value('schema') ?>));");
-  ParameterList params;
   int returnVal = CreateDBObj::writeToDB(pdata, pkgname, params, errMsg);
 
   delete _oidMql;

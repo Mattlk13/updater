@@ -128,8 +128,9 @@ QDomElement LoadCmd::createElement(QDomDocument &doc)
   return elem;
 }
 
-int LoadCmd::writeToDB(const QString pkgname, QString &errMsg)
+int LoadCmd::writeToDB(const QByteArray &pdata, const QString pkgname, QString &errMsg)
 {
+  Q_UNUSED(pdata);
   _selectMql = new MetaSQLQuery("SELECT cmd_id, -1, -1"
                       "  FROM <? literal('tablename') ?> "
                       " WHERE (cmd_name=<? value('name') ?>);");

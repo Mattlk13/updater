@@ -111,7 +111,7 @@ class LoaderWindowPrivate
       }
     }
 
-    QAbstractMessageHandler *handler;
+    XAbstractMessageHandler *handler;
 };
 
 LoaderWindow::LoaderWindow(QWidget* parent, const char* name, Qt::WindowFlags fl)
@@ -902,14 +902,14 @@ bool LoaderWindow::sStart()
     qry.exec("rollback;");
   }
   else if (ignoredErrCnt > 0 && (_multitrans || _premultitransfile) &&
-           QMessageBox::question(this, tr("Ignore Errors?"),
+           _p->handler->question(
                               tr("<p>One or more errors were ignored while "
                                  "processing this Package. Are you sure you "
                                  "want to commit these changes?</p><p>If you "
                                  "answer 'No' then this import will be rolled "
                                  "back.</p>"),
-                              QMessageBox::Yes,
-                              QMessageBox::No | QMessageBox::Default) == QMessageBox::Yes)
+                              QMessageBox::Yes | QMessageBox::No,
+                              QMessageBox::No) == QMessageBox::Yes)
   {
     qry.exec("commit;");
     _p->handler->message(QtWarningMsg,
@@ -1019,7 +1019,8 @@ int LoaderWindow::applySql(Script *pscript, const QByteArray psql)
         pscript->setOnError(Script::Stop);
     }
 
-    int scriptreturn = pscript->writeToDB(psql, _package->name(), message);
+    ParameterList params;
+    int scriptreturn = pscript->writeToDB(psql, _package->name(), params, message);
     if (scriptreturn == -1)
     {
       _p->handler->message(QtWarningMsg,
@@ -1066,24 +1067,26 @@ int LoaderWindow::applySql(Script *pscript, const QByteArray psql)
         default:
           if (DEBUG)
             qDebug("LoaderWindow::applySql() taking default branch");
-          switch(QMessageBox::question(this, tr("Encountered an Error"),
+          switch(_p->handler->question(
                 tr("<pre>%1.</pre><p>Please select the action "
                    "that you would like to take.").arg(message),
-                tr("Retry"), tr("Ignore"), tr("Abort"), 0, 0 ))
+                QMessageBox::Retry|QMessageBox::Ignore|QMessageBox::Abort,
+                QMessageBox::Retry))
           {
-            case 0:
+            case QMessageBox::Retry:
               _p->handler->message(QtWarningMsg, tr("RETRYING..."));
               again = true;
               break;
-            case 1:
+            case QMessageBox::Ignore:
               _p->handler->message(QtWarningMsg,
                   tr("<font color=\"orange\"><b>IGNORING</b> the "
                                "above errors at user request and "
                                "skipping script %1.</font><br>")
                               .arg(pscript->filename()) );
+              again = false;
               returnVal++;
               break;
-            case 2:
+            case QMessageBox::Abort:
             default:
               qry.exec("rollback;");
               _p->handler->message(QtWarningMsg, _rollbackMsg);
@@ -1173,24 +1176,26 @@ int LoaderWindow::applyLoadable(Loadable *pscript, const QByteArray psql)
         default:
           if (DEBUG)
             qDebug("LoaderWindow::applyLoadable() taking default branch");
-          switch(QMessageBox::question(this, tr("Encountered an Error"),
+          switch(_p->handler->question(
                 tr("<pre>%1.</pre><p>Please select the action "
                    "that you would like to take.").arg(message),
-                tr("Retry"), tr("Ignore"), tr("Abort"), 0, 0 ))
+                QMessageBox::Retry|QMessageBox::Ignore|QMessageBox::Abort,
+                QMessageBox::Retry))
           {
-            case 0:
+            case QMessageBox::Retry:
               _p->handler->message(QtWarningMsg, tr("RETRYING..."));
               again = true;
               break;
-            case 1:
+            case QMessageBox::Ignore:
               _p->handler->message(QtWarningMsg,
                   tr("<font color=\"orange\"><b>IGNORING</b> the "
                                "above errors at user request and "
                                "skipping script %1.</font><br>")
                               .arg(pscript->filename()) );
+              again = false;
               returnVal++;
               break;
-            case 2:
+            case QMessageBox::Abort:
             default:
               qry.exec("rollback;");
               _p->handler->message(QtWarningMsg, _rollbackMsg);

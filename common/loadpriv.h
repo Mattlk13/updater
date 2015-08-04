@@ -26,8 +26,7 @@ class LoadPriv : public Loadable
 
     virtual bool isValid()  const { return !_name.isEmpty() && !_module.isEmpty(); }
 
-    virtual int writeToDB(const QByteArray &, const QString pkgname, QString &errMsg) { return writeToDB(pkgname, errMsg); }
-    virtual int writeToDB(const QString pkgname, QString &errMsg);
+    virtual int writeToDB(const QByteArray &pdata, const QString pkgname, QString &errMsg);
 
   protected:
     QString _module;

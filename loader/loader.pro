@@ -48,11 +48,13 @@ macx {
 FORMS   += loaderwindow.ui
 
 HEADERS += loaderwindow.h               \
+           xabstractmessagehandler.h    \
            cmdlinemessagehandler.h      \
            guimessagehandler.h
 
 SOURCES += loaderwindow.cpp             \
            main.cpp                     \
+           xabstractmessagehandler.cpp  \
            cmdlinemessagehandler.cpp    \
            guimessagehandler.cpp
 

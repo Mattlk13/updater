@@ -11,16 +11,17 @@
 #ifndef __CMDLINEMESSAGEHANDLER_H__
 #define __CMDLINEMESSAGEHANDLER_H__
 
-#include <QAbstractMessageHandler>
+#include "xabstractmessagehandler.h"
 
 class CmdLineMessageHandlerPrivate;
 
-class CmdLineMessageHandler : public QAbstractMessageHandler
+class CmdLineMessageHandler : public XAbstractMessageHandler
 {
   public:
     CmdLineMessageHandler(QObject *parent = 0);
-
     virtual ~CmdLineMessageHandler();
+
+    virtual QMessageBox::StandardButton question(const QString &question, QMessageBox::StandardButtons buttons = QMessageBox::Ok, QMessageBox::StandardButton defaultButton = QMessageBox::NoButton);
 
   protected:
     virtual void handleMessage(QtMsgType type, const QString &description, const QUrl &identifier, const QSourceLocation &sourceLocation);

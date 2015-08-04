@@ -65,8 +65,10 @@ QDomElement LoadPriv::createElement(QDomDocument &doc)
   return elem;
 }
 
-int LoadPriv::writeToDB(const QString pkgname, QString &errMsg)
+int LoadPriv::writeToDB(const QByteArray &pdata, const QString pkgname, QString &errMsg)
 {
+  Q_UNUSED(pdata);
+
   if (_name.isEmpty())
   {
     errMsg = TR("<font color=orange>The Privilege does not have a name.</font>")

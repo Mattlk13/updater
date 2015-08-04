@@ -31,9 +31,7 @@ class LoadCmd : public Loadable
                                         && !_title.isEmpty()
                                         && !_executable.isEmpty(); }
 
-    virtual int writeToDB(const QByteArray &, const QString pkgname,
-                          QString &errMsg) { return writeToDB(pkgname, errMsg); }
-    virtual int writeToDB(const QString pkgname, QString &errMsg);
+    virtual int writeToDB(const QByteArray &, const QString pkgname, QString &errMsg);
 
   protected:
     QStringList _args;

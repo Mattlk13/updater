@@ -15,8 +15,6 @@
 
 #include "script.h"
 
-#include <parameter.h>
-
 class QDomDocument;
 class QDomElement;
 class MetaSQLQuery;
@@ -50,8 +48,7 @@ class CreateDBObj : public Script
     QString       _schema;
 
     CreateDBObj();
-    virtual int writeToDB(const QByteArray &pdata, const QString pkgname,
-                          ParameterList &params, QString &errMsg);
+    virtual int writeToDB(const QByteArray &pdata, const QString pkgname, ParameterList &params, QString &errMsg);
 };
 
 #endif

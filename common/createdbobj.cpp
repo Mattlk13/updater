@@ -91,8 +91,7 @@ QDomElement CreateDBObj::createElement(QDomDocument & doc)
   return elem;
 }
 
-int CreateDBObj::writeToDB(const QByteArray &pdata, const QString pkgname,
-                           ParameterList &params, QString &errMsg)
+int CreateDBObj::writeToDB(const QByteArray &pdata, const QString pkgname, ParameterList &params, QString &errMsg)
 {
   if (DEBUG)
     qDebug("CreateDBObj::writeToDB(%s, %s, &errMsg)",
@@ -106,12 +105,12 @@ int CreateDBObj::writeToDB(const QByteArray &pdata, const QString pkgname,
   else if (! pkgname.isEmpty())
     destschema = pkgname;
 
-  int returnVal = Script::writeToDB(pdata, pkgname, errMsg);
-  if (returnVal < 0)
-    return returnVal;
-
   params.append("name", _name);
   params.append("schema", destschema);
+
+  int returnVal = Script::writeToDB(pdata, pkgname, params, errMsg);
+  if (returnVal < 0)
+    return returnVal;
 
   XSqlQuery oidq = _oidMql->toQuery(params);
   if (oidq.first())

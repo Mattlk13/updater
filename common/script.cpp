@@ -13,6 +13,7 @@
 #include <QDomDocument>
 #include <QSqlError>
 
+#include "metasql.h"
 #include "xsqlquery.h"
 
 #define DEBUG false
@@ -98,7 +99,7 @@ QStringList Script::onErrorList(bool includeDefault)
   return list;
 }
 
-int Script::writeToDB(const QByteArray &pdata, const QString annotation, QString &errMsg)
+int Script::writeToDB(const QByteArray &pdata, const QString annotation, ParameterList &params, QString &errMsg)
 {
   if (DEBUG)
     qDebug("Script::writeToDb(%s, %s, &errMsg) with onError %d",
@@ -109,7 +110,8 @@ int Script::writeToDB(const QByteArray &pdata, const QString annotation, QString
     return -1;
   }
 
-  XSqlQuery create;
+  MetaSQLQuery mql(pdata);
+  XSqlQuery create = mql.toQuery(params);
   create.exec(QString(pdata));
   if (create.lastError().type() != QSqlError::NoError)
   {

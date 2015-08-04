@@ -41,7 +41,7 @@ CreateFunction::CreateFunction(const QDomElement &elem, QStringList &msg, QList<
 }
 
 int CreateFunction::writeToDB(const QByteArray &pdata, const QString pkgname,
-                              QString &errMsg)
+                              ParameterList &params, QString &errMsg)
 {
   if (DEBUG)
     qDebug("CreateFunction::writeToDb(%s, %s, &errMsg)",
@@ -88,7 +88,7 @@ int CreateFunction::writeToDB(const QByteArray &pdata, const QString pkgname,
     }
   }
 
-  int returnVal = Script::writeToDB(pdata, pkgname, errMsg);
+  int returnVal = Script::writeToDB(pdata, pkgname, params, errMsg);
   if (returnVal < 0)
     return returnVal;
 

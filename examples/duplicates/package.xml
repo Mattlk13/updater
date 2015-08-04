@@ -1,7 +1,7 @@
 <!DOCTYPE packageManagerDev>
 <package version="1.0"
          id="duplicates"
-         name="duplicateCheck"
+         name="duplicatecheck"
          developer="xTuple"
          descrip="Check for errors creating dups"
          updater="2.0.0beta3">

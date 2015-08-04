@@ -14,6 +14,8 @@
 #include <QString>
 #include <QStringList>
 
+#include <parameter.h>
+
 class QDomDocument;
 class QDomElement;
 
@@ -50,7 +52,7 @@ class Script
     virtual QString comment() const { return _comment; }
     virtual void setComment(const QString & comment) { _comment = comment; }
 
-    virtual int writeToDB(const QByteArray &data, const QString annotation, QString &errMsg);
+    virtual int writeToDB(const QByteArray &data, const QString pkgname, ParameterList &params, QString &errMsg);
 
     static QString onErrorToName(OnError);
     static OnError nameToOnError(const QString &);

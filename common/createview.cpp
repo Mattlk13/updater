@@ -43,7 +43,8 @@ CreateView::CreateView(const QDomElement &elem, QStringList &msg, QList<bool> &f
   }
 }
 
-int CreateView::writeToDB(const QByteArray &pdata, const QString pkgname, QString &errMsg)
+int CreateView::writeToDB(const QByteArray &pdata, const QString pkgname,
+                          ParameterList &params, QString &errMsg)
 {
   if (DEBUG)
     qDebug("CreateView::writeToDb(%s, %s, &errMsg)",
@@ -55,7 +56,6 @@ int CreateView::writeToDB(const QByteArray &pdata, const QString pkgname, QStrin
                              "  AND  (relkind=<? value('relkind') ?>)"
                              "  AND  (relnamespace=pg_namespace.oid)"
                              "  AND  (nspname=<? value('schema') ?>));");
-  ParameterList params;
   params.append("relkind", _relkind);
 
   int returnVal = CreateDBObj::writeToDB(pdata, pkgname, params, errMsg);

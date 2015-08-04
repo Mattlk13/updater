@@ -11,17 +11,18 @@
 #ifndef __GUIMESSAGEHANDLER_H__
 #define __GUIMESSAGEHANDLER_H__
 
-#include <QAbstractMessageHandler>
+#include "xabstractmessagehandler.h"
 
 class GuiMessageHandlerPrivate;
 
-class GuiMessageHandler : public QAbstractMessageHandler
+class GuiMessageHandler : public XAbstractMessageHandler
 {
   public:
     GuiMessageHandler(QObject *parent = 0);
     virtual ~GuiMessageHandler();
 
     virtual bool setDestination(QtMsgType type, QWidget *destination);
+    virtual QMessageBox::StandardButton question(const QString &question, QMessageBox::StandardButtons buttons = QMessageBox::Ok, QMessageBox::StandardButton defaultButton = QMessageBox::NoButton);
 
   protected:
     virtual void handleMessage(QtMsgType type, const QString &description, const QUrl &identifier, const QSourceLocation &sourceLocation);

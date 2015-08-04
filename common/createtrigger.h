@@ -22,7 +22,7 @@ class CreateTrigger : public CreateDBObj
                   const OnError onError = Default);
     CreateTrigger(const QDomElement &, QStringList &, QList<bool> &);
 
-    virtual int writeToDB(const QByteArray &, const QString pkgname, QString &);
+    virtual int writeToDB(const QByteArray &pdata, const QString pkgname, ParameterList &params, QString &errMsg);
 
   protected:
 };

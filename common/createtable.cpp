@@ -43,7 +43,8 @@ CreateTable::CreateTable(const QDomElement &elem, QStringList &msg, QList<bool> 
   }
 }
 
-int CreateTable::writeToDB(const QByteArray &pdata, const QString pkgname, QString &errMsg)
+int CreateTable::writeToDB(const QByteArray &pdata, const QString pkgname,
+                           ParameterList &params, QString &errMsg)
 {
   if (DEBUG)
     qDebug("CreateTable::writeToDb(%s, %s, &errMsg)",
@@ -55,7 +56,6 @@ int CreateTable::writeToDB(const QByteArray &pdata, const QString pkgname, QStri
                              "  AND  (relkind=<? value('relkind') ?>)"
                              "  AND  (relnamespace=pg_namespace.oid)"
                              "  AND  (nspname=<? value('schema') ?>));");
-  ParameterList params;
   params.append("relkind", _relkind);
 
   int returnVal = CreateDBObj::writeToDB(pdata, pkgname, params, errMsg);

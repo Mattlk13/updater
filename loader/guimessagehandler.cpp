@@ -36,7 +36,7 @@ class GuiMessageHandlerPrivate
    with calls to setDestination(QtMsgType, QWidget*).
  */
 GuiMessageHandler::GuiMessageHandler(QObject *parent)
-  : QAbstractMessageHandler(parent)
+  : XAbstractMessageHandler(parent)
 {
   _p = new GuiMessageHandlerPrivate();
 }
@@ -96,4 +96,11 @@ void GuiMessageHandler::handleMessage(QtMsgType type,
   else if (type == QtDebugMsg)   QMessageBox::information(parent, QString(), description);
   else if (type == QtWarningMsg) QMessageBox::warning(parent,     QString(), description);
   else                           QMessageBox::critical(parent,    QString(), description);
+}
+
+QMessageBox::StandardButton GuiMessageHandler::question(const QString &question, QMessageBox::StandardButtons buttons, QMessageBox::StandardButton defaultButton)
+{
+  QWidget *dest = _p->warningDest;
+  QWidget *parent = qobject_cast<QWidget *>(dest); //(parent());
+  return QMessageBox::question(parent, QString(), question, buttons, defaultButton);
 }

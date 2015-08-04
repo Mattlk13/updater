@@ -22,7 +22,7 @@ class CreateFunction : public CreateDBObj
                    const OnError onError = Default);
     CreateFunction(const QDomElement &, QStringList &, QList<bool> &);
 
-    virtual int writeToDB(const QByteArray &, const QString pkgname, QString &);
+    virtual int writeToDB(const QByteArray &, const QString pkgname, ParameterList &params, QString &errMsg);
 
   protected:
 };
