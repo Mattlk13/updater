@@ -16,6 +16,7 @@
 #include "cmdlinemessagehandler.h"
 
 #include <QDebug>
+#include <QTextDocument>
 
 class CmdLineMessageHandlerPrivate
 {
@@ -70,18 +71,16 @@ void CmdLineMessageHandler::handleMessage(QtMsgType type,
 {
   Q_UNUSED(identifier);
   Q_UNUSED(sourceLocation);
+  QTextDocument tmpdoc;
+  tmpdoc.setHtml(description);
+  std::string msg = tmpdoc.toPlainText().trimmed().toStdString();
   switch (type)
   {
-    case QtDebugMsg:     qDebug()    << description; break;
-    case QtWarningMsg:   qWarning()  << description; break;
-    case QtFatalMsg:
-      {
-        const char *str = description.toStdString().c_str();
-        qFatal("%s", str);
-        break;
-      }
+    case QtDebugMsg:     std::cout << "Debug:"    << msg << "\n"; break;
+    case QtFatalMsg:     std::cout << "Error:"    << msg << "\n"; break;
+    case QtWarningMsg:
     case QtCriticalMsg:
-    default:             qCritical() << description; break;
+    default:             std::cout << msg << "\n"; break;
   }
 }
 
@@ -90,6 +89,9 @@ QMessageBox::StandardButton CmdLineMessageHandler::question(const QString &quest
   QMap<int, QMessageBox::StandardButton> choice;
   int defaultIdx = 0;
   int idx = 1;
+  QTextDocument tmpdoc;
+  tmpdoc.setHtml(question);
+  std::string msg = tmpdoc.toPlainText().trimmed().toStdString();
   foreach (const QMessageBox::StandardButton &key, _p->buttonMap.keys())
   {
     if (buttons & key)
@@ -101,16 +103,22 @@ QMessageBox::StandardButton CmdLineMessageHandler::question(const QString &quest
     }
   }
 
+  QString qsprompt;
+  foreach (int key, choice.keys())
+  {
+    qsprompt = qsprompt.append("\n")
+                       .append(tr("%1:\t%2)")
+                           .arg(key)
+                           .arg(_p->buttonMap.value(choice.value(key))));
+  }
+  qsprompt = qsprompt.append("\n")
+                     .append(tr("[%1]").arg(defaultIdx));
+
   int selection = -1;
   std::string input;
   while (! choice.contains(selection))
   {
-    qWarning() << question;
-    foreach (int key, choice.keys())
-    {
-      qWarning() << key << _p->buttonMap.value(choice.value(key));
-    }
-    qWarning() << tr("[%1]").arg(defaultIdx);
+    std::cout << msg << "\n" << qsprompt.toStdString() << " ";
 
     std::cin >> input;
     selection = input.empty() ? defaultIdx : atoi(input.c_str());
