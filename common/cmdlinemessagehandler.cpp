@@ -76,8 +76,8 @@ void CmdLineMessageHandler::handleMessage(QtMsgType type,
   std::string msg = tmpdoc.toPlainText().trimmed().toStdString();
   switch (type)
   {
-    case QtDebugMsg:     std::cout << "Debug:"    << msg << "\n"; break;
     case QtFatalMsg:     std::cout << "Error:"    << msg << "\n"; break;
+    case QtDebugMsg:
     case QtWarningMsg:
     case QtCriticalMsg:
     default:             std::cout << msg << "\n"; break;

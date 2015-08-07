@@ -28,11 +28,6 @@
 #include "providerdialog.h"
 #include "queryeditor.h"
 
-/*
- *  Constructs a PackageWindow as a child of 'parent', with the
- *  name 'name' and widget flags set to 'f'.
- *
- */
 PackageWindow::PackageWindow(QWidget* parent, const char* name, Qt::WindowFlags fl)
     : Q3MainWindow(parent, name, fl)
 {
@@ -44,18 +39,11 @@ PackageWindow::PackageWindow(QWidget* parent, const char* name, Qt::WindowFlags 
   fileNew();
 }
 
-/*
- *  Destroys the object and frees any allocated resources
- */
 PackageWindow::~PackageWindow()
 {
   // no need to delete child widgets, Qt does it all for us
 }
 
-/*
- *  Sets the strings of the subwidgets using the current
- *  language.
- */
 void PackageWindow::languageChange()
 {
   retranslateUi(this);
@@ -116,17 +104,15 @@ void PackageWindow::fileOpen()
     _reports->clear();
     sReportSelectionChanged();
 
-    QList<Prerequisite*>::iterator pit = _package->_prerequisites.begin();
-    for(; pit != _package->_prerequisites.end(); ++pit)
-      _prereqs->insertItem((*pit)->name());
+    foreach (Prerequisite *pit, _package->_prerequisites)
+      _prereqs->insertItem(pit->name());
 
-    QList<Script*>::iterator sit = _package->_scripts.begin();
-    for(; sit != _package->_scripts.end(); ++sit)
-      _scripts->insertItem((*sit)->name());
+    foreach (Script *sit, _package->_scripts)
+      _scripts->insertItem(sit->name());
 
-    QList<LoadReport*>::iterator rit = _package->_reports.begin();
-    for(; rit != _package->_reports.end(); ++rit)
-      _reports->insertItem((*rit)->name());
+    foreach (Loadable *rit, _package->_reports)
+      _reports->insertItem(rit->name());
+
     _reports->sort();
   }
   else
@@ -193,22 +179,21 @@ void PackageWindow::sPrereqSelectionChanged()
   {
     bool found = false;
     QString name = _prereqs->currentText();
-    QList<Prerequisite*>::iterator it = _package->_prerequisites.begin();
-    for(; it != _package->_prerequisites.end(); ++it)
+    foreach (Prerequisite *it, _package->_prerequisites)
     {
-      if((*it)->name() == name)
+      if (it->name() == name)
       {
         _raisePrereq->setEnabled(true);
         _lowerPrereq->setEnabled(true);
         _removePrereq->setEnabled(true);
         _typeLabel->setEnabled(true);
-        _type->setText(Prerequisite::typeToName((*it)->type()));
+        _type->setText(Prerequisite::typeToName(it->type()));
         _type->setEnabled(true);
         _editConditions->setEnabled(true);
-        _prereqMessage->setText((*it)->message());
+        _prereqMessage->setText(it->message());
         _gbPrereqMessage->setEnabled(true);
         _providers->clear();
-        _providers->insertStringList((*it)->providerList());
+        _providers->insertStringList(it->providerList());
         _providers->sort();
         _gbProviders->setEnabled(true);
         found = true;
@@ -462,18 +447,17 @@ void PackageWindow::sScriptSelectionChanged()
   {
     bool found = false;
     QString name = _scripts->currentText();
-    QList<Script*>::iterator it = _package->_scripts.begin();
-    for(; it != _package->_scripts.end(); ++it)
+    foreach (Script *it, _package->_scripts)
     {
-      if((*it)->name() == name)
+      if (it->name() == name)
       {
         _raiseScript->setEnabled(true);
         _lowerScript->setEnabled(true);
         _removeScript->setEnabled(true);
         _onErrorLabel->setEnabled(true);
-        _onError->setCurrentItem((int)(*it)->onError());
+        _onError->setCurrentItem((int)it->onError());
         _onError->setEnabled(true);
-        _scriptMessage->setText((*it)->comment());
+        _scriptMessage->setText(it->comment());
         _gbScriptMessage->setEnabled(true);
         found = true;
       }
@@ -568,36 +552,33 @@ void PackageWindow::sLowerScript()
 void PackageWindow::sRemoveScript()
 {
   QString name = _scripts->currentText();
-  QList<Script*>::iterator it = _package->_scripts.begin();
-  for(; it != _package->_scripts.end(); ++it)
-    if((*it)->name() == name)
-      it = _package->_scripts.remove(it);
+  foreach (Script *it, _package->_scripts)
+    if (it->name() == name)
+      _package->_scripts.remove(it);
   _scripts->removeItem(_scripts->currentItem());
 }
 
 void PackageWindow::sOnErrorActivated( const QString & string )
 {
   QString name = _scripts->currentText();
-  QList<Script*>::iterator it = _package->_scripts.begin();
-  for(; it != _package->_scripts.end(); ++it)
-    if((*it)->name() == name)
-      (*it)->setOnError(Script::nameToOnError(string));
+  foreach (Script *it, _package->_scripts)
+    if (it->name() == name)
+      it->setOnError(Script::nameToOnError(string));
 }
 
 void PackageWindow::sScriptTextChanged()
 {
   QString name = _scripts->currentText();
-  QList<Script*>::iterator it = _package->_scripts.begin();
-  for(; it != _package->_scripts.end(); ++it)
-    if((*it)->name() == name)
-      (*it)->setComment(_scriptMessage->text());
+  foreach (Script *it, _package->_scripts)
+    if (it->name() == name)
+      it->setComment(_scriptMessage->text());
 }
 
 void PackageWindow::sEditScriptMessage()
 {
   TextEditDialog ted(this, "script message dialog");
   ted._text->setText(_scriptMessage->text());
-  if(ted.exec() == TextEditDialog::Accepted)
+  if (ted.exec() == TextEditDialog::Accepted)
     _scriptMessage->setText(ted._text->text());
 }
 
@@ -607,16 +588,15 @@ void PackageWindow::sReportSelectionChanged()
   {
     bool found = false;
     QString name = _reports->currentText();
-    QList<LoadReport*>::iterator it = _package->_reports.begin();
-    for(; it != _package->_reports.end(); ++it)
+    foreach (Loadable *it, _package->_reports)
     {
-      if((*it)->name() == name)
+      if (it->name() == name)
       {
         _removeReport->setEnabled(true);
         _gradeLabel->setEnabled(true);
-        _grade->setValue((*it)->grade());
+        _grade->setValue(it->grade());
         _grade->setEnabled(true);
-        _reportMessage->setText((*it)->comment());
+        _reportMessage->setText(it->comment());
         _gbReportMessage->setEnabled(true);
         found = true;
       }
@@ -662,29 +642,26 @@ void PackageWindow::sAddReport()
 void PackageWindow::sRemoveReport()
 {
   QString name = _reports->currentText();
-  QList<LoadReport*>::iterator it = _package->_reports.begin();
-  for(; it != _package->_reports.end(); ++it)
-    if((*it)->name() == name)
-      it = _package->_reports.remove(it);
+  foreach (Loadable *it, _package->_reports)
+    if (it->name() == name)
+      _package->_reports.remove(it);
   _reports->removeItem(_reports->currentItem());
 }
 
-void PackageWindow::sGradeChanged( int value)
+void PackageWindow::sGradeChanged(int value)
 {
   QString name = _reports->currentText();
-  QList<LoadReport*>::iterator it = _package->_reports.begin();
-  for(; it != _package->_reports.end(); ++it)
-    if((*it)->name() == name)
-      (*it)->setGrade(value);
+  foreach (Loadable *it, _package->_reports)
+    if (it->name() == name)
+      it->setGrade(value);
 }
 
 void PackageWindow::sReportTextChanged()
 {
   QString name = _reports->currentText();
-  QList<LoadReport*>::iterator it = _package->_reports.begin();
-  for(; it != _package->_reports.end(); ++it)
-    if((*it)->name() == name)
-      (*it)->setComment(_reportMessage->text());
+  foreach (Loadable *it, _package->_reports)
+    if (it->name() == name)
+      it->setComment(_reportMessage->text());
 }
 
 void PackageWindow::sEditReportMessage()

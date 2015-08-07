@@ -25,7 +25,6 @@
 #include "loaderwindow.h"
 
 QString _databaseURL = "";
-bool    _autoRun     = false;
 
 int main(int argc, char* argv[])
 {
@@ -33,7 +32,6 @@ int main(int argc, char* argv[])
   bool    haveUsername    = FALSE;
   bool    haveDatabaseURL = FALSE;
   _loggedIn        = FALSE;
-  bool multitrans = false;
   bool debugpkg   = false;
   bool autoRunArg   = false;
   bool autoRunCheck = false;
@@ -60,7 +58,6 @@ int main(int argc, char* argv[])
         qWarning("%s [ -databaseURL=PSQL7://hostname:port/databasename |"
                  " -username=databaseUserName -passwd=databasePassword |"
                  " -noauth ]"
-                 " [ -multitrans ]"
                  " [ -debug ]"
                  " [ -file=updaterFile.gz ]"
                  " [ -autorun ]",
@@ -87,8 +84,6 @@ int main(int argc, char* argv[])
         haveUsername = TRUE;
         havePasswd   = TRUE;
       }
-      else if (argument.toLower() == "-multitrans")
-        multitrans = true;
       else if (argument.toLower() == "-debug")
         debugpkg = true;
       else if (argument.startsWith("-file=", Qt::CaseInsensitive))
@@ -189,7 +184,6 @@ int main(int argc, char* argv[])
   }
 
   LoaderWindow * mainwin = new LoaderWindow();
-  mainwin->setMultipleTransactions(multitrans);
   mainwin->setDebugPkg(debugpkg);
   mainwin->setCmdline(autoRunArg);
   if (! pkgfile.isEmpty())
@@ -197,13 +191,11 @@ int main(int argc, char* argv[])
     autoRunCheck = mainwin->openFile(pkgfile);
   }
 
-  // Start the upgrade if the -autoRun argument is used and file prereqs pass.
   if (autoRunArg)
   {
     bool successful = autoRunCheck && ! pkgfile.isEmpty();
     if (successful)
     {
-      _autoRun = true;
       successful = mainwin->sStart();
     }
     if (successful)     // not else if

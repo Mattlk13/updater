@@ -19,21 +19,9 @@
 class QDomDocument;
 class QDomElement;
 
-class CreateFunction;
-class CreateTable;
-class CreateTrigger;
-class CreateView;
-class LoadAppScript;
-class LoadAppUI;
-class LoadCmd;
-class LoadImage;
-class LoadMetasql;
-class LoadPriv;
-class LoadReport;
+class Loadable;
 class Prerequisite;
 class Script;
-class FinalScript;
-class InitScript;
 class XAbstractMessageHandler;
 
 class Package
@@ -55,21 +43,21 @@ class Package
     bool     system()   const;
     XVersion version()  const { return _pkgversion; }
 
-    QList<CreateFunction*> _functions;
-    QList<CreateTable*>    _tables;
-    QList<CreateTrigger*>  _triggers;
-    QList<CreateView*>     _views;
-    QList<LoadAppScript*>  _appscripts;
-    QList<LoadAppUI*>      _appuis;
-    QList<LoadCmd*>        _cmds;
-    QList<LoadImage*>      _images;
-    QList<LoadMetasql*>    _metasqls;
-    QList<LoadPriv*>       _privs;
-    QList<Prerequisite*>   _prerequisites;
-    QList<Script*>         _scripts;
-    QList<FinalScript*>    _finalscripts;
-    QList<InitScript*>     _initscripts;
-    QList<LoadReport*>     _reports;
+    QList<Script*>       _functions;
+    QList<Script*>       _tables;
+    QList<Script*>       _triggers;
+    QList<Script*>       _views;
+    QList<Loadable*>     _appscripts;
+    QList<Loadable*>     _appuis;
+    QList<Loadable*>     _cmds;
+    QList<Loadable*>     _images;
+    QList<Loadable*>     _metasqls;
+    QList<Loadable*>     _privs;
+    QList<Prerequisite*> _prerequisites;
+    QList<Script*>       _scripts;
+    QList<Script*>       _finalscripts;
+    QList<Script*>       _initscripts;
+    QList<Loadable*>     _reports;
 
     bool containsAppScript(const QString &name)    const;
     bool containsAppUI(const QString &name)        const;

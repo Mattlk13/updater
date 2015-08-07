@@ -38,7 +38,6 @@ public slots:
     virtual void helpAbout();
 
     virtual void setCmdline(bool);
-    virtual void setMultipleTransactions(bool);
     virtual void setDebugPkg(bool);
     virtual bool openFile(QString filename);
     virtual void setWindowTitle();
@@ -59,15 +58,9 @@ protected slots:
     virtual void languageChange();
 
 private:
-    int _dbTimerId;
-    bool _multitrans;
-    bool _premultitransfile;
-    QStringList _triggers;      // to be disabled and enabled
-
-    int disableTriggers();
-    int enableTriggers();
-
     LoaderWindowPrivate *_p;
+
+    friend class LoaderWindowPrivate;
 
 };
 

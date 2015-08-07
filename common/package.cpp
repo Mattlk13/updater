@@ -198,51 +198,59 @@ QDomElement Package::createElement(QDomDocument & doc)
   elem.setAttribute("id", _id);
   elem.setAttribute("version", _pkgversion.toString());
 
-  for(QList<Prerequisite*>::iterator i = _prerequisites.begin();
-      i != _prerequisites.end(); ++i)
-    elem.appendChild((*i)->createElement(doc));
+  foreach (Prerequisite *i, _prerequisites)
+    elem.appendChild(i->createElement(doc));
 
-  for(QList<LoadPriv*>::iterator i = _privs.begin(); i != _privs.end(); ++i)
-    elem.appendChild((*i)->createElement(doc));
+  foreach (Script *i, _initscripts)
+    elem.appendChild(i->createElement(doc));
 
-  for(QList<LoadMetasql*>::iterator i = _metasqls.begin(); i != _metasqls.end(); ++i)
-    elem.appendChild((*i)->createElement(doc));
+  foreach (Script *i, _functions)
+    elem.appendChild(i->createElement(doc));
 
-  for(QList<Script*>::iterator i = _scripts.begin(); i != _scripts.end(); ++i)
-    elem.appendChild((*i)->createElement(doc));
+  foreach (Script *i, _tables)
+    elem.appendChild(i->createElement(doc));
 
-  for(QList<LoadReport*>::iterator i = _reports.begin();
-      i != _reports.end(); ++i)
-    elem.appendChild((*i)->createElement(doc));
+  foreach (Script *i, _triggers)
+    elem.appendChild(i->createElement(doc));
 
-  for(QList<LoadAppUI*>::iterator i = _appuis.begin(); i != _appuis.end(); ++i)
-    elem.appendChild((*i)->createElement(doc));
+  foreach (Script *i, _views)
+    elem.appendChild(i->createElement(doc));
 
-  for(QList<LoadAppScript*>::iterator i = _appscripts.begin();
-      i != _appscripts.end(); ++i)
-    elem.appendChild((*i)->createElement(doc));
+  foreach (Loadable *i, _privs)
+    elem.appendChild(i->createElement(doc));
 
-  for(QList<LoadCmd*>::iterator i = _cmds.begin(); i != _cmds.end(); ++i)
-    elem.appendChild((*i)->createElement(doc));
+  foreach (Loadable *i, _metasqls)
+    elem.appendChild(i->createElement(doc));
 
-  for (QList<LoadImage*>::iterator i = _images.begin(); i != _images.end(); ++i)
-    elem.appendChild((*i)->createElement(doc));
+  foreach (Script *i, _scripts)
+    elem.appendChild(i->createElement(doc));
 
-  for(QList<FinalScript*>::iterator i = _finalscripts.begin(); i != _finalscripts.end(); ++i)
-    elem.appendChild((*i)->createElement(doc));
+  foreach (Loadable *i, _reports)
+    elem.appendChild(i->createElement(doc));
 
-  for(QList<InitScript*>::iterator i = _initscripts.begin(); i != _initscripts.end(); ++i)
-    elem.appendChild((*i)->createElement(doc));
+  foreach (Loadable *i, _appuis)
+    elem.appendChild(i->createElement(doc));
+
+  foreach (Loadable *i, _appscripts)
+    elem.appendChild(i->createElement(doc));
+
+  foreach (Loadable *i, _cmds)
+    elem.appendChild(i->createElement(doc));
+
+  foreach (Loadable *i, _images)
+    elem.appendChild(i->createElement(doc));
+
+  foreach (Script *i, _finalscripts)
+    elem.appendChild(i->createElement(doc));
 
   return elem;
 }
 
 bool Package::containsReport(const QString & reportname) const
 {
-  QList<LoadReport*>::const_iterator it = _reports.begin();
-  for(; it != _reports.end(); ++it)
+  foreach (Loadable *it, _reports)
   {
-    if((*it)->name() == reportname)
+    if (it->name() == reportname)
       return true;
   }
   return false;
@@ -250,10 +258,9 @@ bool Package::containsReport(const QString & reportname) const
 
 bool Package::containsScript(const QString & scriptname) const
 {
-  QList<Script*>::const_iterator it = _scripts.begin();
-  for(; it != _scripts.end(); ++it)
+  foreach (Script *it, _scripts)
   {
-    if((*it)->name() == scriptname)
+    if (it->name() == scriptname)
       return true;
   }
   return false;
@@ -261,10 +268,9 @@ bool Package::containsScript(const QString & scriptname) const
 
 bool Package::containsFinalScript(const QString & scriptname) const
 {
-  QList<FinalScript*>::const_iterator it = _finalscripts.begin();
-  for(; it != _finalscripts.end(); ++it)
+  foreach (Script *it, _finalscripts)
   {
-    if((*it)->name() == scriptname)
+    if (it->name() == scriptname)
       return true;
   }
   return false;
@@ -272,10 +278,9 @@ bool Package::containsFinalScript(const QString & scriptname) const
 
 bool Package::containsInitScript(const QString & scriptname) const
 {
-  QList<InitScript*>::const_iterator it = _initscripts.begin();
-  for(; it != _initscripts.end(); ++it)
+  foreach (Script *it, _initscripts)
   {
-    if((*it)->name() == scriptname)
+    if(it->name() == scriptname)
       return true;
   }
   return false;
@@ -283,10 +288,9 @@ bool Package::containsInitScript(const QString & scriptname) const
 
 bool Package::containsPrerequisite(const QString & prereqname) const
 {
-  QList<Prerequisite*>::const_iterator it = _prerequisites.begin();
-  for(; it != _prerequisites.end(); ++it)
+  foreach (Prerequisite *it, _prerequisites)
   {
-    if((*it)->name() == prereqname)
+    if (it->name() == prereqname)
       return true;
   }
   return false;
@@ -294,10 +298,9 @@ bool Package::containsPrerequisite(const QString & prereqname) const
 
 bool Package::containsAppScript(const QString &pname) const
 {
-  QList<LoadAppScript*>::const_iterator it = _appscripts.begin();
-  for(; it != _appscripts.end(); ++it)
+  foreach (Loadable *it, _appscripts)
   {
-    if((*it)->name() == pname)
+    if (it->name() == pname)
       return true;
   }
   return false;
@@ -305,10 +308,9 @@ bool Package::containsAppScript(const QString &pname) const
 
 bool Package::containsAppUI(const QString &pname) const
 {
-  QList<LoadAppUI*>::const_iterator it = _appuis.begin();
-  for(; it != _appuis.end(); ++it)
+  foreach (Loadable *it, _appuis)
   {
-    if((*it)->name() == pname)
+    if (it->name() == pname)
       return true;
   }
   return false;
@@ -316,10 +318,9 @@ bool Package::containsAppUI(const QString &pname) const
 
 bool Package::containsImage(const QString &pname) const
 {
-  QList<LoadImage*>::const_iterator it = _images.begin();
-  for(; it != _images.end(); ++it)
+  foreach (Loadable *it, _images)
   {
-    if((*it)->name() == pname)
+    if (it->name() == pname)
       return true;
   }
   return false;
@@ -327,10 +328,9 @@ bool Package::containsImage(const QString &pname) const
 
 bool Package::containsCmd(const QString &pname) const
 {
-  QList<LoadCmd*>::const_iterator it = _cmds.begin();
-  for(; it != _cmds.end(); ++it)
+  foreach (Loadable *it, _cmds)
   {
-    if((*it)->name() == pname)
+    if (it->name() == pname)
       return true;
   }
   return false;
@@ -338,10 +338,9 @@ bool Package::containsCmd(const QString &pname) const
 
 bool Package::containsFunction(const QString &pname) const
 {
-  QList<CreateFunction*>::const_iterator it = _functions.begin();
-  for(; it != _functions.end(); ++it)
+  foreach (Script *it, _functions)
   {
-    if((*it)->name() == pname)
+    if (it->name() == pname)
       return true;
   }
   return false;
@@ -349,10 +348,9 @@ bool Package::containsFunction(const QString &pname) const
 
 bool Package::containsMetasql(const QString &pname) const
 {
-  QList<LoadMetasql*>::const_iterator it = _metasqls.begin();
-  for(; it != _metasqls.end(); ++it)
+  foreach (Loadable *it, _metasqls)
   {
-    if((*it)->name() == pname)
+    if (it->name() == pname)
       return true;
   }
   return false;
@@ -360,10 +358,9 @@ bool Package::containsMetasql(const QString &pname) const
 
 bool Package::containsPriv(const QString &pname) const
 {
-  QList<LoadPriv*>::const_iterator it = _privs.begin();
-  for(; it != _privs.end(); ++it)
+  foreach (Loadable *it, _privs)
   {
-    if((*it)->name() == pname)
+    if (it->name() == pname)
       return true;
   }
   return false;
@@ -371,10 +368,9 @@ bool Package::containsPriv(const QString &pname) const
 
 bool Package::containsTable(const QString &pname) const
 {
-  QList<CreateTable*>::const_iterator it = _tables.begin();
-  for(; it != _tables.end(); ++it)
+  foreach (Script *it, _tables)
   {
-    if((*it)->name() == pname)
+    if (it->name() == pname)
       return true;
   }
   return false;
@@ -382,10 +378,9 @@ bool Package::containsTable(const QString &pname) const
 
 bool Package::containsTrigger(const QString &pname) const
 {
-  QList<CreateTrigger*>::const_iterator it = _triggers.begin();
-  for(; it != _triggers.end(); ++it)
+  foreach (Script *it, _triggers)
   {
-    if((*it)->name() == pname)
+    if (it->name() == pname)
       return true;
   }
   return false;
@@ -393,10 +388,9 @@ bool Package::containsTrigger(const QString &pname) const
 
 bool Package::containsView(const QString &pname) const
 {
-  QList<CreateView*>::const_iterator it = _views.begin();
-  for(; it != _views.end(); ++it)
+  foreach (Script *it, _views)
   {
-    if((*it)->name() == pname)
+    if (it->name() == pname)
       return true;
   }
   return false;
