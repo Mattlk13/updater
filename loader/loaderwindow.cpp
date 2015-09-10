@@ -1,7 +1,7 @@
 /*
  * This file is part of the xTuple ERP: PostBooks Edition, a free and
  * open source Enterprise Resource Planning software suite,
- * Copyright (c) 1999-2012 by OpenMFG LLC, d/b/a xTuple.
+ * Copyright (c) 1999-2015 by OpenMFG LLC, d/b/a xTuple.
  * It is licensed to you under the Common Public Attribution License
  * version 1.0, the full text of which (including xTuple-specific Exhibits)
  * is available at www.xtuple.com/CPAL.  By using this software, you agree
@@ -436,12 +436,12 @@ void LoaderWindow::launchBrowser(QWidget * w, const QString & url)
 
 void LoaderWindow::helpAbout()
 {
-  QMessageBox::about(this, _name,
+  QMessageBox::about(this, Updater::name,
     tr("<p>Apply update packages to your xTuple ERP database."
        "<p>Version %1</p>"
        "<p>%2</p>"
        "All Rights Reserved")
-    .arg(_version).arg(_copyright));
+    .arg(Updater::version).arg(Updater::copyright));
 }
 
 void LoaderWindow::timerEvent( QTimerEvent * e )
@@ -1302,14 +1302,14 @@ void LoaderWindow::setWindowTitle()
     parseDatabaseURL(_databaseURL, protocol, server, database, port);
 
     QMainWindow::setWindowTitle( tr("%1 %2 - %3 on %4/%5 AS %6")
-                               .arg(_name)
-                               .arg(_version)
+                               .arg(Updater::name)
+                               .arg(Updater::version)
                                .arg(name)
                                .arg(server)
                                .arg(database)
                                .arg(_q.value("username").toString()) );
   }
   else
-    QMainWindow::setWindowTitle(tr("%1 %2").arg(_name).arg(_version));
+    QMainWindow::setWindowTitle(tr("%1 %2").arg(Updater::name).arg(Updater::version));
 }
 
