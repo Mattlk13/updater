@@ -1,7 +1,7 @@
 /*
  * This file is part of the xTuple ERP: PostBooks Edition, a free and
  * open source Enterprise Resource Planning software suite,
- * Copyright (c) 1999-2012 by OpenMFG LLC, d/b/a xTuple.
+ * Copyright (c) 1999-2015 by OpenMFG LLC, d/b/a xTuple.
  * It is licensed to you under the Common Public Attribution License
  * version 1.0, the full text of which (including xTuple-specific Exhibits)
  * is available at www.xtuple.com/CPAL.  By using this software, you agree
@@ -13,15 +13,17 @@
 
 #include <QString>
 
-extern QString _name;
-extern QString _copyright;
-extern QString _version;
+class Updater {
+  public:
+    static QString  build;
+    static QString  copyright;
+    static bool     loggedIn;
+    static QString  name;
+    static QString  version;
+};
 
 extern QString _user;
 extern int     _usrid;
-
-extern bool _evaluation;
-extern bool _loggedIn;
 
 #endif
 

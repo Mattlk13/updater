@@ -1,7 +1,7 @@
 /*
  * This file is part of the xTuple ERP: PostBooks Edition, a free and
  * open source Enterprise Resource Planning software suite,
- * Copyright (c) 1999-2012 by OpenMFG LLC, d/b/a xTuple.
+ * Copyright (c) 1999-2015 by OpenMFG LLC, d/b/a xTuple.
  * It is licensed to you under the Common Public Attribution License
  * version 1.0, the full text of which (including xTuple-specific Exhibits)
  * is available at www.xtuple.com/CPAL.  By using this software, you agree
@@ -29,10 +29,17 @@ bool    _autoRun     = false;
 
 int main(int argc, char* argv[])
 {
+#if defined Q_WS_WIN
+  Updater::name = QObject::tr("Update Manager for Windows");
+#elif defined Q_WS_X11
+  Updater::name = QObject::tr("Update Manager for Linux");
+#elif defined Q_WS_MAC
+  Updater::name = QObject::tr("Update Manager for Mac");
+#endif
+
   QString username  = "";
   bool    haveUsername    = FALSE;
   bool    haveDatabaseURL = FALSE;
-  _loggedIn        = FALSE;
   bool multitrans = false;
   bool debugpkg   = false;
   bool autoRunArg   = false;
@@ -125,27 +132,24 @@ int main(int argc, char* argv[])
         QApplication::exit(-1);
       }
       else
-        _loggedIn = TRUE;
+        Updater::loggedIn = true;
     }
 
   }
 
-  if(!_loggedIn)
+  if (! Updater::loggedIn)
   {
     ParameterList params;
-    params.append("name", _name);
-    params.append("copyright", _copyright.toAscii().data());
-    params.append("version",   _version.toAscii().data());
-    params.append("build", __DATE__ " " __TIME__); // use C++ string concat
+    params.append("name",      Updater::name);
+    params.append("copyright", Updater::copyright);
+    params.append("version",   Updater::version);
+    params.append("build",     Updater::build);
 
     if (haveUsername)
       params.append("username", _user);
 
     if (haveDatabaseURL)
       params.append("databaseURL", _databaseURL.toAscii().data());
-
-    if (_evaluation)
-      params.append("evaluation");
 
     login2 newdlg(0, "", TRUE);
     newdlg.set(params, 0);
@@ -156,7 +160,7 @@ int main(int argc, char* argv[])
     {
       _databaseURL = newdlg._databaseURL;
       _user = newdlg._user;
-      _loggedIn = TRUE;
+      Updater::loggedIn = true;
     }
 
     QSqlQuery su;

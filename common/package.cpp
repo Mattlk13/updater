@@ -1,7 +1,7 @@
 /*
  * This file is part of the xTuple ERP: PostBooks Edition, a free and
  * open source Enterprise Resource Planning software suite,
- * Copyright (c) 1999-2012 by OpenMFG LLC, d/b/a xTuple.
+ * Copyright (c) 1999-2015 by OpenMFG LLC, d/b/a xTuple.
  * It is licensed to you under the Common Public Attribution License
  * version 1.0, the full text of which (including xTuple-specific Exhibits)
  * is available at www.xtuple.com/CPAL.  By using this software, you agree
@@ -54,12 +54,11 @@ Package::Package(const QDomElement & elem, QStringList &msgList,
 
   if (elem.hasAttribute("updater"))
   {
-    // _version = updater/builder application global
-    XVersion updaterversion(_version);
+    XVersion updaterversion(Updater::version);
     if (! updaterversion.isValid())
     {
       msgList << TR("Could not parse the application's version string %1")
-                  .arg(_version);
+                  .arg(Updater::version);
       fatalList << true;
       return;
     }
@@ -78,7 +77,7 @@ Package::Package(const QDomElement & elem, QStringList &msgList,
       msgList << TR("This package requires a newer version of the updater "
                     "(%1) than you are currently running (%2). Please get "
                     "a newer updater.")
-                  .arg(elem.attribute("updater")).arg(_version);
+                  .arg(elem.attribute("updater")).arg(Updater::version);
       fatalList << true;
       return;
     }
