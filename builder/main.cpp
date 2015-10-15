@@ -8,7 +8,7 @@
  * to be bound by its terms.
  */
 
-#include <qapplication.h>
+#include <QApplication>
 
 #include "packagewindow.h"
 
@@ -19,7 +19,6 @@ int main(int argc, char *argv[])
   PackageWindow * mainwin = new PackageWindow();
   mainwin->show();
 
-  app.setMainWidget(mainwin);
   return app.exec();
 }
 

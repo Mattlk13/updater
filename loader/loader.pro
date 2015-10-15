@@ -12,6 +12,11 @@ include( ../global.pri )
 
 TEMPLATE = app
 CONFIG += qt warn_on
+QT     += xml sql xmlpatterns
+isEqual(QT_MAJOR_VERSION, 5) {
+  QT += widgets
+}
+
 DEPENDPATH  += ../$${XTUPLE_BLD}/common
 
 TARGET = updater
@@ -51,7 +56,5 @@ HEADERS += loaderwindow.h
 
 SOURCES += loaderwindow.cpp             \
            main.cpp
-
-QT += xml sql xmlpatterns
 
 RESOURCES += loader.qrc

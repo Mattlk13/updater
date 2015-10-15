@@ -7,7 +7,7 @@ version 1.0, the full text of which (including xTuple-specific Exhibits)
 is available at www.xtuple.com/CPAL.  By using this software, you agree
 to be bound by its terms.</comment>
  <class>PackageWindow</class>
- <widget class="Q3MainWindow" name="PackageWindow" >
+ <widget class="QMainWindow" name="PackageWindow" >
   <property name="geometry" >
    <rect>
     <x>0</x>
@@ -42,7 +42,7 @@ to be bound by its terms.</comment>
         <item>
          <layout class="QVBoxLayout" >
           <item>
-           <widget class="Q3ListBox" name="_prereqs" />
+           <widget class="QListWidget" name="_prereqs" />
           </item>
           <item>
            <layout class="QHBoxLayout" >
@@ -184,13 +184,13 @@ to be bound by its terms.</comment>
            </layout>
           </item>
           <item>
-           <widget class="Q3GroupBox" name="_gbPrereqMessage" >
+           <widget class="QGroupBox" name="_gbPrereqMessage" >
             <property name="title" >
              <string>Message</string>
             </property>
             <layout class="QVBoxLayout" >
              <item>
-              <widget class="Q3TextEdit" name="_prereqMessage" />
+              <widget class="QTextEdit" name="_prereqMessage" />
              </item>
              <item>
               <layout class="QHBoxLayout" >
@@ -223,13 +223,13 @@ to be bound by its terms.</comment>
            </widget>
           </item>
           <item>
-           <widget class="Q3GroupBox" name="_gbProviders" >
+           <widget class="QGroupBox" name="_gbProviders" >
             <property name="title" >
              <string>Providers</string>
             </property>
             <layout class="QHBoxLayout" >
              <item>
-              <widget class="Q3ListBox" name="_providers" />
+              <widget class="QListWidget" name="_providers" />
              </item>
              <item>
               <layout class="QVBoxLayout" >
@@ -287,7 +287,7 @@ to be bound by its terms.</comment>
         <item>
          <layout class="QVBoxLayout" >
           <item>
-           <widget class="Q3ListBox" name="_scripts" />
+           <widget class="QListWidget" name="_scripts" />
           </item>
           <item>
            <layout class="QHBoxLayout" >
@@ -397,13 +397,13 @@ to be bound by its terms.</comment>
            </layout>
           </item>
           <item>
-           <widget class="Q3GroupBox" name="_gbScriptMessage" >
+           <widget class="QGroupBox" name="_gbScriptMessage" >
             <property name="title" >
              <string>Message</string>
             </property>
             <layout class="QVBoxLayout" >
              <item>
-              <widget class="Q3TextEdit" name="_scriptMessage" />
+              <widget class="QTextEdit" name="_scriptMessage" />
              </item>
              <item>
               <layout class="QHBoxLayout" >
@@ -447,7 +447,7 @@ to be bound by its terms.</comment>
         <item>
          <layout class="QVBoxLayout" >
           <item>
-           <widget class="Q3ListBox" name="_reports" />
+           <widget class="QListWidget" name="_reports" />
           </item>
           <item>
            <layout class="QHBoxLayout" >
@@ -521,13 +521,13 @@ to be bound by its terms.</comment>
            </layout>
           </item>
           <item>
-           <widget class="Q3GroupBox" name="_gbReportMessage" >
+           <widget class="QGroupBox" name="_gbReportMessage" >
             <property name="title" >
              <string>Message</string>
             </property>
             <layout class="QVBoxLayout" >
              <item>
-              <widget class="Q3TextEdit" name="_reportMessage" />
+              <widget class="QTextEdit" name="_reportMessage" />
              </item>
              <item>
               <layout class="QHBoxLayout" >
@@ -567,7 +567,7 @@ to be bound by its terms.</comment>
     </item>
    </layout>
   </widget>
-  <widget class="Q3ToolBar" name="toolBar" >
+  <widget class="QToolBar" name="toolBar" >
    <property name="geometry" >
     <rect>
      <x>0</x>
@@ -575,9 +575,6 @@ to be bound by its terms.</comment>
      <width>49</width>
      <height>16</height>
     </rect>
-   </property>
-   <property name="label" >
-    <string>Tools</string>
    </property>
    <addaction name="fileNewAction" />
    <addaction name="fileOpenAction" />
@@ -740,31 +737,26 @@ to be bound by its terms.</comment>
  <layoutdefault spacing="6" margin="11" />
  <customwidgets>
   <customwidget>
-   <class>Q3ToolBar</class>
-   <extends>Q3Frame</extends>
-   <header>q3listview.h</header>
+   <class>QToolBar</class>
+   <extends>QFrame</extends>
+   <header>qlistview.h</header>
   </customwidget>
   <customwidget>
-   <class>Q3GroupBox</class>
+   <class>QGroupBox</class>
    <extends>QGroupBox</extends>
-   <header>Qt3Support/Q3GroupBox</header>
+   <header>QtSupport/QGroupBox</header>
    <container>1</container>
   </customwidget>
   <customwidget>
-   <class>Q3MainWindow</class>
+   <class>QMainWindow</class>
    <extends>QWidget</extends>
-   <header>q3mainwindow.h</header>
+   <header>qmainwindow.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>
-   <class>Q3ListBox</class>
-   <extends>Q3Frame</extends>
-   <header>q3listbox.h</header>
-  </customwidget>
-  <customwidget>
-   <class>Q3TextEdit</class>
-   <extends>Q3Frame</extends>
-   <header>q3textedit.h</header>
+   <class>QTextEdit</class>
+   <extends>QFrame</extends>
+   <header>qtextedit.h</header>
   </customwidget>
  </customwidgets>
  <includes>

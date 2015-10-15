@@ -12,6 +12,10 @@ include( ../global.pri )
 
 TEMPLATE = app
 CONFIG += qt warn_on thread
+QT     += xml sql xmlpatterns
+isEqual(QT_MAJOR_VERSION, 5) {
+  QT += widgets
+}
 
 DESTDIR = ../bin
 
@@ -49,6 +53,4 @@ SOURCES += main.cpp \
            texteditdialog.cpp \
            queryeditor.cpp \
            newprereqdialog.cpp
-
-QT += xml qt3support sql xmlpatterns
 

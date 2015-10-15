@@ -71,7 +71,7 @@ int main(int argc, char* argv[])
       else if (argument.startsWith("-databaseURL=", Qt::CaseInsensitive))
       {
         QString protocol;
-        haveDatabaseURL = TRUE;
+        haveDatabaseURL = true;
         _databaseURL    = argument.right(argument.length() - 13);
         parseDatabaseURL(_databaseURL, protocol, hostName, dbName, port);
       }
@@ -163,7 +163,7 @@ int main(int argc, char* argv[])
     if (haveDatabaseURL)
       params.append("databaseURL", _databaseURL.toAscii().data());
 
-    login2 newdlg(0, "", TRUE);
+    login2 newdlg(0, "", true);
     newdlg.set(params, 0);
 
     if (newdlg.exec() == QDialog::Rejected)

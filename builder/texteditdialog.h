@@ -11,7 +11,7 @@
 #ifndef TEXTEDITDIALOG_H
 #define TEXTEDITDIALOG_H
 
-#include <QtGui/QDialog>
+#include <QDialog>
 
 #include "ui_texteditdialog.h"
 

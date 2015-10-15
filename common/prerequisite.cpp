@@ -201,10 +201,10 @@ bool Prerequisite::removeProvider(const QString & package)
     if((*it).package() == package)
     {
       it = _providers.erase(it);
-      return TRUE;
+      return true;
     }
   }
-  return FALSE;
+  return false;
 }
 
 PrerequisiteProvider Prerequisite::provider(const QString & package) const

@@ -56,7 +56,7 @@ class Script
 
     static QString onErrorToName(OnError);
     static OnError nameToOnError(const QString &);
-    static QStringList onErrorList(bool includeDefault = TRUE);
+    static QStringList onErrorList(bool includeDefault = true);
 
   protected:
     QString _name;

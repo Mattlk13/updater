@@ -503,7 +503,7 @@ void LoaderWindow::timerEvent( QTimerEvent * e )
 {
   if(e->timerId() == _p->dbTimerId)
   {
-    QSqlDatabase db = QSqlDatabase::database(QSqlDatabase::defaultConnection,FALSE);
+    QSqlDatabase db = QSqlDatabase::database(QSqlDatabase::defaultConnection, false);
     if(db.isValid())
       XSqlQuery qry("SELECT CURRENT_DATE;");
     // if we are not connected then we have some problems!

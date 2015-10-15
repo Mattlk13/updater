@@ -96,7 +96,7 @@ int LoadImage::writeToDB(const QByteArray &pdata, const QString pkgname, QString
     imageBuffer.open(QIODevice::ReadWrite);
     imageIo.setDevice(&imageBuffer);
     imageIo.setFormat(_filename.right(_filename.size() -
-                                      _filename.lastIndexOf(".") - 1).toAscii());
+                                      _filename.lastIndexOf(".") - 1).toLatin1());
     if (DEBUG)
       qDebug("LoadImage::writeToDB() image has format %s",
              imageIo.format().data());
@@ -111,7 +111,7 @@ int LoadImage::writeToDB(const QByteArray &pdata, const QString pkgname, QString
     }
 
     imageBuffer.close();
-    encodeddata = QUUEncode(imageBuffer).toAscii();
+    encodeddata = QUUEncode(imageBuffer).toLatin1();
     if (DEBUG) qDebug("LoadImage::writeToDB() image was uuencoded: %s",
                       encodeddata.left(160).data());
   }

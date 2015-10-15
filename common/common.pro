@@ -12,6 +12,11 @@ include( ../global.pri )
 
 TEMPLATE = lib
 CONFIG += qt warn_on thread staticlib
+QT += xml sql xmlpatterns
+isEqual(QT_MAJOR_VERSION, 5) {
+  QT += widgets
+}
+
 
 TARGET = updatercommon
 DESTDIR = ../lib
@@ -68,5 +73,3 @@ SOURCES = data.cpp \
           cmdlinemessagehandler.cpp    \
           guimessagehandler.cpp        \
           xversion.cpp
-
-QT += xml sql xmlpatterns

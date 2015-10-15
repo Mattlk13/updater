@@ -103,7 +103,7 @@ class Prerequisite
 
     static QString typeToName(Type);
     static Type nameToType(const QString &);
-    static QStringList typeList(bool includeNone = TRUE);
+    static QStringList typeList(bool includeNone = true);
 
   protected:
     DependsOn  *_dependency;

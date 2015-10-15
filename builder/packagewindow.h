@@ -11,17 +11,17 @@
 #ifndef PACKAGEWINDOW_H
 #define PACKAGEWINDOW_H
 
-#include <Q3MainWindow>
+#include <QMainWindow>
 #include <package.h>
 
 #include "ui_packagewindow.h"
 
-class PackageWindow : public Q3MainWindow, public Ui::PackageWindow
+class PackageWindow : public QMainWindow, public Ui::PackageWindow
 {
     Q_OBJECT
 
 public:
-    PackageWindow(QWidget* parent = 0, const char* name = 0, Qt::WindowFlags fl = Qt::WType_TopLevel);
+    PackageWindow(QWidget* parent = 0, const char* name = 0, Qt::WindowFlags fl = Qt::Window);
     ~PackageWindow();
 
 public slots:

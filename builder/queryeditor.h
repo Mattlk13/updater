@@ -11,7 +11,7 @@
 #ifndef QUERYEDITOR_H
 #define QUERYEDITOR_H
 
-#include <QtGui/QDialog>
+#include <QDialog>
 
 #include "ui_queryeditor.h"
 

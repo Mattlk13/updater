@@ -29,13 +29,15 @@
 #include "queryeditor.h"
 
 PackageWindow::PackageWindow(QWidget* parent, const char* name, Qt::WindowFlags fl)
-    : Q3MainWindow(parent, name, fl)
+    : QMainWindow(parent, fl)
 {
   setupUi(this);
+  if (name)
+    setObjectName(name);
 
   (void)statusBar();
 
-  _onError->insertStringList(Script::onErrorList());
+  _onError->addItems(Script::onErrorList());
   fileNew();
 }
 
@@ -105,15 +107,15 @@ void PackageWindow::fileOpen()
     sReportSelectionChanged();
 
     foreach (Prerequisite *pit, _package->_prerequisites)
-      _prereqs->insertItem(pit->name());
+      _prereqs->addItem(pit->name());
 
     foreach (Script *sit, _package->_scripts)
-      _scripts->insertItem(sit->name());
+      _scripts->addItem(sit->name());
 
     foreach (Loadable *rit, _package->_reports)
-      _reports->insertItem(rit->name());
+      _reports->addItem(rit->name());
 
-    _reports->sort();
+    _reports->sortItems();
   }
   else
     QMessageBox::warning(this, tr("Error Loading File"), tr("An error was encountered while trying to load the file %1.\n%2\nLine %3, Column %4").arg(filename).arg(errMsg).arg(errLine).arg(errCol));
@@ -175,10 +177,10 @@ void PackageWindow::helpAbout()
 
 void PackageWindow::sPrereqSelectionChanged()
 {
-  if(_prereqs->currentItem() != -1)
+  if(_prereqs->currentItem())
   {
     bool found = false;
-    QString name = _prereqs->currentText();
+    QString name = _prereqs->currentItem()->text();
     foreach (Prerequisite *it, _package->_prerequisites)
     {
       if (it->name() == name)
@@ -193,8 +195,8 @@ void PackageWindow::sPrereqSelectionChanged()
         _prereqMessage->setText(it->message());
         _gbPrereqMessage->setEnabled(true);
         _providers->clear();
-        _providers->insertStringList(it->providerList());
-        _providers->sort();
+        _providers->addItems(it->providerList());
+        _providers->sortItems();
         _gbProviders->setEnabled(true);
         found = true;
       }
@@ -238,10 +240,12 @@ void PackageWindow::sAddPrereq()
       prereq->setName(name);
       prereq->setType(Prerequisite::nameToType(npd._type->currentText()));
       _package->_prerequisites.append(prereq);
-      _prereqs->insertItem(prereq->name());
-      Q3ListBoxItem * item = _prereqs->findItem(prereq->name());
-      _prereqs->setCurrentItem(item);
-      _prereqs->ensureCurrentVisible();
+      _prereqs->addItem(prereq->name());
+      QList<QListWidgetItem *> itemList = _prereqs->findItems(prereq->name(), Qt::MatchExactly);
+      if (itemList.size() >= 1) {
+        _prereqs->setCurrentItem(itemList.at(0));
+        _prereqs->scrollToItem(itemList.at(0));
+      }
     }
     done = true;
   }
@@ -249,6 +253,7 @@ void PackageWindow::sAddPrereq()
 
 void PackageWindow::sRaisePrereq()
 {
+#if QT_VERSION < 0x050000
   int idx = _prereqs->currentItem();
   if(idx <= 0)
     return;
@@ -269,11 +274,13 @@ void PackageWindow::sRaisePrereq()
   _prereqs->changeItem(p0->name(), idx);
 
   _prereqs->setCurrentItem(idx-1);
+#endif
 }
 
 
 void PackageWindow::sLowerPrereq()
 {
+#if QT_VERSION < 0x050000
   int idx = _prereqs->currentItem();
   if(idx == (int)(_prereqs->count() - 1))
     return;
@@ -294,21 +301,22 @@ void PackageWindow::sLowerPrereq()
   _prereqs->changeItem(p0->name(), idx+1);
 
   _prereqs->setCurrentItem(idx+1);
+#endif
 }
 
 void PackageWindow::sRemovePrereq()
 {
-  QString name = _prereqs->currentText();
+  QString name = _prereqs->currentItem()->text();
   QList<Prerequisite*>::iterator it = _package->_prerequisites.begin();
   for(; it != _package->_prerequisites.end(); ++it)
     if((*it)->name() == name)
-      it = _package->_prerequisites.remove(it);
-  _prereqs->removeItem(_prereqs->currentItem());
+      it = _package->_prerequisites.erase(it);
+//_prereqs->removeItem(_prereqs->currentItem());
 }
 
 void PackageWindow::sEditConditions()
 {
-  QString name = _prereqs->currentText();
+  QString name = _prereqs->currentItem()->text();
   QList<Prerequisite*>::iterator it = _package->_prerequisites.begin();
   for(; it != _package->_prerequisites.end(); ++it)
   {
@@ -320,7 +328,7 @@ void PackageWindow::sEditConditions()
         qe._text->setText((*it)->query());
         if(qe.exec() == QueryEditor::Accepted)
         {
-          (*it)->setQuery(qe._text->text());
+          (*it)->setQuery(qe._text->toPlainText());
         }
       }
       else
@@ -331,24 +339,24 @@ void PackageWindow::sEditConditions()
 
 void PackageWindow::sPrereqTextChanged()
 {
-  QString name = _prereqs->currentText();
+  QString name = _prereqs->currentItem()->text();
   QList<Prerequisite*>::iterator it = _package->_prerequisites.begin();
   for(; it != _package->_prerequisites.end(); ++it)
     if((*it)->name() == name)
-      (*it)->setMessage(_prereqMessage->text());
+      (*it)->setMessage(_prereqMessage->toPlainText());
 }
 
 void PackageWindow::sEditPrereqMessage()
 {
   TextEditDialog ted(this, "prereq message dialog");
-  ted._text->setText(_prereqMessage->text());
+  ted._text->setText(_prereqMessage->toPlainText());
   if(ted.exec() == TextEditDialog::Accepted)
-    _prereqMessage->setText(ted._text->text());
+    _prereqMessage->setText(ted._text->toPlainText());
 }
 
 void PackageWindow::sProviderSelectionChanged()
 {
-  bool selected = (_providers->currentItem() != -1);
+  bool selected = (_providers->currentItem() != 0);
 
   _editProvider->setEnabled(selected);
   _removeProvider->setEnabled(selected);
@@ -364,7 +372,7 @@ void PackageWindow::sAddProvider()
     if(pd.exec() == ProviderDialog::Accepted)
     {
       PrerequisiteProvider provider;
-      QString name = _prereqs->currentText();
+      QString name = _prereqs->currentItem()->text();
       QList<Prerequisite*>::iterator it = _package->_prerequisites.begin();
       for(; it != _package->_prerequisites.end(); ++it)
       {
@@ -373,10 +381,10 @@ void PackageWindow::sAddProvider()
           provider = (*it)->provider(pd._name->text());
           if(!provider.isValid())
           {
-            provider = PrerequisiteProvider(pd._name->text(), pd._text->text());
+            provider = PrerequisiteProvider(pd._name->text(), pd._text->toPlainText());
             (*it)->setProvider(provider);
-            _providers->insertItem(provider.package());
-            _providers->sort();
+            _providers->addItem(provider.package());
+            _providers->sortItems();
           }
           else
             done = false;
@@ -388,13 +396,13 @@ void PackageWindow::sAddProvider()
 
 void PackageWindow::sEditProvider()
 {
-  QString name = _prereqs->currentText();
+  QString name = _prereqs->currentItem()->text();
   QList<Prerequisite*>::iterator it = _package->_prerequisites.begin();
   for(; it != _package->_prerequisites.end(); ++it)
   {
     if((*it)->name() == name)
     {
-      PrerequisiteProvider provider = (*it)->provider(_providers->currentText());
+      PrerequisiteProvider provider = (*it)->provider(_providers->currentItem()->text());
       if(provider.isValid())
       {
         ProviderDialog pd(this, "provider dialog");
@@ -414,10 +422,10 @@ void PackageWindow::sEditProvider()
               }
               (*it)->removeProvider(provider.package());
               provider.setPackage(pd._name->text());
-              _providers->changeItem(provider.package(), _providers->currentItem());
-              _providers->sort();
+//            _providers->changeItem(provider.package(), _providers->currentItem());
+              _providers->sortItems();
             }
-            provider.setInfo(pd._text->text());
+            provider.setInfo(pd._text->toPlainText());
             (*it)->setProvider(provider);
           }
           done = true;
@@ -431,22 +439,22 @@ void PackageWindow::sEditProvider()
 
 void PackageWindow::sRemoveProvider()
 {
-  QString provider = _providers->currentText();
-  QString name = _prereqs->currentText();
+  QString provider = _providers->currentItem()->text();
+  QString name = _prereqs->currentItem()->text();
   QList<Prerequisite*>::iterator it = _package->_prerequisites.begin();
   for(; it != _package->_prerequisites.end(); ++it)
     if((*it)->name() == name)
       (*it)->removeProvider(provider);
-  _providers->removeItem(_providers->currentItem());
+//_providers->removeItem(_providers->currentItem());
 }
 
 
 void PackageWindow::sScriptSelectionChanged()
 {
-  if(_scripts->currentItem() != -1)
+  if(_scripts->currentItem())
   {
     bool found = false;
-    QString name = _scripts->currentText();
+    QString name = _scripts->currentItem()->text();
     foreach (Script *it, _package->_scripts)
     {
       if (it->name() == name)
@@ -455,7 +463,7 @@ void PackageWindow::sScriptSelectionChanged()
         _lowerScript->setEnabled(true);
         _removeScript->setEnabled(true);
         _onErrorLabel->setEnabled(true);
-        _onError->setCurrentItem((int)it->onError());
+//      _onError->setCurrentItem((int)it->onError());
         _onError->setEnabled(true);
         _scriptMessage->setText(it->comment());
         _gbScriptMessage->setEnabled(true);
@@ -471,7 +479,7 @@ void PackageWindow::sScriptSelectionChanged()
     _lowerScript->setEnabled(false);
     _removeScript->setEnabled(false);
     _onErrorLabel->setEnabled(false);
-    _onError->setCurrentItem(0);
+    _onError->setCurrentIndex(0);
     _onError->setEnabled(false);
     _scriptMessage->clear();
     _gbScriptMessage->setEnabled(false);
@@ -495,14 +503,17 @@ void PackageWindow::sAddScript()
 
   Script *script = new Script(scriptfile);
   _package->_scripts.append(script);
-  _scripts->insertItem(script->name());
-  Q3ListBoxItem * item = _scripts->findItem(script->name());
-  _scripts->setCurrentItem(item);
-  _scripts->ensureCurrentVisible();
+  _scripts->addItem(script->name());
+  QList<QListWidgetItem *> itemList = _scripts->findItems(script->name(), Qt::MatchExactly);
+  if (itemList.size() >= 1) {
+    _scripts->setCurrentItem(itemList.at(0));
+    _scripts->scrollToItem(itemList.at(0));
+  }
 }
 
 void PackageWindow::sRaiseScript()
 {
+#if QT_VERSION < 0x050000
   int idx = _scripts->currentItem();
   if(idx <= 0)
     return;
@@ -510,7 +521,7 @@ void PackageWindow::sRaiseScript()
   Script *s0 = _package->_scripts[idx-1];
   Script *s1 = _package->_scripts[idx];
 
-  if(s1->name() != _scripts->currentText())
+  if(s1->name() != _scripts->currentItem()->text())
   {
     QMessageBox::warning(this, tr("Data Error"), tr("The data does not appear to be in a correct state."));
     return;
@@ -523,10 +534,12 @@ void PackageWindow::sRaiseScript()
   _scripts->changeItem(s0->name(), idx);
 
   _scripts->setCurrentItem(idx-1);
+#endif
 }
 
 void PackageWindow::sLowerScript()
 {
+#if QT_VERSION < 0x050000
   int idx = _scripts->currentItem();
   if(idx == (int)(_scripts->count() - 1))
     return;
@@ -534,7 +547,7 @@ void PackageWindow::sLowerScript()
   Script *s0 = _package->_scripts[idx];
   Script *s1 = _package->_scripts[idx+1];
 
-  if(s0->name() != _scripts->currentText())
+  if(s0->name() != _scripts->currentItem()->text())
   {
     QMessageBox::warning(this, tr("Data Error"), tr("The data does not appear to be in a correct state."));
     return;
@@ -547,20 +560,23 @@ void PackageWindow::sLowerScript()
   _scripts->changeItem(s0->name(), idx+1);
 
   _scripts->setCurrentItem(idx+1);
+#endif
 }
 
 void PackageWindow::sRemoveScript()
 {
-  QString name = _scripts->currentText();
+#if QT_VERSION < 0x050000
+  QString name = _scripts->currentItem()->text();
   foreach (Script *it, _package->_scripts)
     if (it->name() == name)
       _package->_scripts.remove(it);
   _scripts->removeItem(_scripts->currentItem());
+#endif
 }
 
 void PackageWindow::sOnErrorActivated( const QString & string )
 {
-  QString name = _scripts->currentText();
+  QString name = _scripts->currentItem()->text();
   foreach (Script *it, _package->_scripts)
     if (it->name() == name)
       it->setOnError(Script::nameToOnError(string));
@@ -568,26 +584,26 @@ void PackageWindow::sOnErrorActivated( const QString & string )
 
 void PackageWindow::sScriptTextChanged()
 {
-  QString name = _scripts->currentText();
+  QString name = _scripts->currentItem()->text();
   foreach (Script *it, _package->_scripts)
     if (it->name() == name)
-      it->setComment(_scriptMessage->text());
+      it->setComment(_scriptMessage->toPlainText());
 }
 
 void PackageWindow::sEditScriptMessage()
 {
   TextEditDialog ted(this, "script message dialog");
-  ted._text->setText(_scriptMessage->text());
+  ted._text->setText(_scriptMessage->toPlainText());
   if (ted.exec() == TextEditDialog::Accepted)
-    _scriptMessage->setText(ted._text->text());
+    _scriptMessage->setText(ted._text->toPlainText());
 }
 
 void PackageWindow::sReportSelectionChanged()
 {
-  if(_reports->currentItem() != -1)
+  if(_reports->currentItem())
   {
     bool found = false;
-    QString name = _reports->currentText();
+    QString name = _reports->currentItem()->text();
     foreach (Loadable *it, _package->_reports)
     {
       if (it->name() == name)
@@ -632,25 +648,28 @@ void PackageWindow::sAddReport()
 
   LoadReport *report = new LoadReport(reportfile);
   _package->_reports.append(report);
-  _reports->insertItem(report->name());
-  Q3ListBoxItem * item = _reports->findItem(report->name());
-  _reports->setCurrentItem(item);
-  _reports->sort();
-  _reports->ensureCurrentVisible();
+  _reports->addItem(report->name());
+  QList<QListWidgetItem *> itemList = _prereqs->findItems(report->name(), Qt::MatchExactly);
+  if (itemList.size() >= 1) {
+    _reports->setCurrentItem(itemList.at(0));
+    _reports->scrollToItem(itemList.at(0));
+  }
 }
 
 void PackageWindow::sRemoveReport()
 {
-  QString name = _reports->currentText();
+#if QT_VERSION < 0x050000
+  QString name = _reports->currentItem()->text();
   foreach (Loadable *it, _package->_reports)
     if (it->name() == name)
       _package->_reports.remove(it);
   _reports->removeItem(_reports->currentItem());
+#endif
 }
 
 void PackageWindow::sGradeChanged(int value)
 {
-  QString name = _reports->currentText();
+  QString name = _reports->currentItem()->text();
   foreach (Loadable *it, _package->_reports)
     if (it->name() == name)
       it->setGrade(value);
@@ -658,16 +677,16 @@ void PackageWindow::sGradeChanged(int value)
 
 void PackageWindow::sReportTextChanged()
 {
-  QString name = _reports->currentText();
+  QString name = _reports->currentItem()->text();
   foreach (Loadable *it, _package->_reports)
     if (it->name() == name)
-      it->setComment(_reportMessage->text());
+      it->setComment(_reportMessage->toPlainText());
 }
 
 void PackageWindow::sEditReportMessage()
 {
   TextEditDialog ted(this, "report message dialog");
-  ted._text->setText(_reportMessage->text());
+  ted._text->setText(_reportMessage->toPlainText());
   if(ted.exec() == TextEditDialog::Accepted)
-    _reportMessage->setText(ted._text->text());
+    _reportMessage->setText(ted._text->toPlainText());
 }
