@@ -159,6 +159,11 @@ void LoaderWindow::languageChange()
   retranslateUi(this);
 }
 
+XAbstractMessageHandler *LoaderWindow::handler() const
+{
+  return _p->handler;
+}
+
 void LoaderWindow::fileNew()
 {
   // we don't actually create files here but we are using this as the

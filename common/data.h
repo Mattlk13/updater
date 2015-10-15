@@ -17,11 +17,7 @@ extern QString _name;
 extern QString _copyright;
 extern QString _version;
 
-extern QString _user;
 extern int     _usrid;
-
-extern bool _evaluation;
-extern bool _loggedIn;
 
 #endif
 

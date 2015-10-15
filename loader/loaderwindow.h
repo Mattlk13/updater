@@ -21,6 +21,7 @@ class TarFile;
 #include "ui_loaderwindow.h"
 
 class LoaderWindowPrivate;
+class XAbstractMessageHandler;
 
 class LoaderWindow : public QMainWindow, public Ui::LoaderWindow
 {
@@ -29,6 +30,8 @@ class LoaderWindow : public QMainWindow, public Ui::LoaderWindow
 public:
     LoaderWindow(QWidget* parent = 0, const char* name = 0, Qt::WindowFlags fl = Qt::Window);
     ~LoaderWindow();
+
+    virtual XAbstractMessageHandler *handler() const;
 
 public slots:
     virtual void fileNew();

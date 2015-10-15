@@ -15,7 +15,6 @@
 #include <QSqlError>
 #include <QVariant>
 
-#include "errorReporter.h"
 #include "xabstractmessagehandler.h"
 #include "xsqlquery.h"
 
@@ -301,31 +300,13 @@ bool Prerequisite::met(QString &errMsg, XAbstractMessageHandler *handler)
       }
 
     case License:
-      {
-      bool headlessUpdate = false;
-      XSqlQuery metricCheck;
-      metricCheck.prepare("SELECT fetchMetricBool('headlessUpdate') AS result;");
-      metricCheck.exec();
-      if(metricCheck.first())
-      {
-          headlessUpdate = metricCheck.value("result").toBool();
-      }
-      else
-      {
-        ErrorReporter::error(QtCriticalMsg, 0, TR("Database Error"), metricCheck,
-                             __FILE__, __LINE__);
-      }
-      if(!headlessUpdate)
-      {
-        returnVal = handler->question(TR("<h1>Do you accept this license agreement?</h1><br/>%1")
-                                      .arg(_message),
-                                      QMessageBox::Yes | QMessageBox::No, QMessageBox::No) == QMessageBox::Yes;
-        if (! returnVal) {
-          errMsg = TR("The user declined to accept the usage license.");
-        }
+      returnVal = handler->question(TR("<h1>Do you accept this license agreement?</h1><br/>%1")
+                                    .arg(_message),
+                                    QMessageBox::Yes | QMessageBox::No, QMessageBox::No) == QMessageBox::Yes;
+      if (! returnVal) {
+        errMsg = TR("The user declined to accept the usage license.");
       }
       break;
-      }
 
     case Dependency:
       {
