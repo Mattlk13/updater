@@ -302,7 +302,7 @@ bool Prerequisite::met(QString &errMsg, XAbstractMessageHandler *handler)
     case License:
       returnVal = handler->question(TR("<h1>Do you accept this license agreement?</h1><br/>%1")
                                     .arg(_message),
-                                    QMessageBox::Yes | QMessageBox::No, QMessageBox::No) == QMessageBox::Yes;
+                                    QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes) == QMessageBox::Yes;
       if (! returnVal) {
         errMsg = TR("The user declined to accept the usage license.");
       }

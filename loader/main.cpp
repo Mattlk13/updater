@@ -40,6 +40,7 @@ int main(int argc, char* argv[])
   bool    autoRunCheck    = false;
   bool    debugpkg        = false;
   bool    haveDatabaseURL = false;
+  bool    acceptDefaults  = false;
 
   QApplication app(argc, argv);
   app.addLibraryPath(".");
@@ -63,7 +64,7 @@ int main(int argc, char* argv[])
                  " [ -passwd=databasePassword ]"
                  " [ -debug ]"
                  " [ -file=updaterFile.gz | -f updaterFile.gz ]"
-                 " [ -autorun ]",
+                 " [ -autorun [ -D ] ]",
                  argv[0]);
         return 0;
       }
@@ -111,7 +112,13 @@ int main(int argc, char* argv[])
         pkgfile = argument.right(argument.size() - argument.indexOf("=") - 1);
       }
       else if (argument.toLower() == "-autorun")
+      {
         autoRunArg = true;
+      }
+      else if (argument == "-D")
+      {
+        acceptDefaults = true;
+      }
     }
   }
 
@@ -119,6 +126,7 @@ int main(int argc, char* argv[])
   mainwin->setDebugPkg(debugpkg);
   mainwin->setCmdline(autoRunArg);
   handler = mainwin->handler();
+  handler->setAcceptDefaults(autoRunArg && acceptDefaults);
 
   db = QSqlDatabase::addDatabase("QPSQL7");
   if (!db.isValid())

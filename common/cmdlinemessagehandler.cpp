@@ -86,6 +86,9 @@ void CmdLineMessageHandler::handleMessage(QtMsgType type,
 
 QMessageBox::StandardButton CmdLineMessageHandler::question(const QString &question, QMessageBox::StandardButtons buttons, QMessageBox::StandardButton defaultButton)
 {
+  if (_acceptDefaults)
+    return defaultButton;
+
   QMap<int, QMessageBox::StandardButton> choice;
   int defaultIdx = 0;
   int idx = 1;

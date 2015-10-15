@@ -100,6 +100,9 @@ void GuiMessageHandler::handleMessage(QtMsgType type,
 
 QMessageBox::StandardButton GuiMessageHandler::question(const QString &question, QMessageBox::StandardButtons buttons, QMessageBox::StandardButton defaultButton)
 {
+  if (_acceptDefaults)
+    return defaultButton;
+
   QWidget *dest = _p->warningDest;
   QWidget *parent = qobject_cast<QWidget *>(dest); //(parent());
   return QMessageBox::question(parent, QString(), question, buttons, defaultButton);

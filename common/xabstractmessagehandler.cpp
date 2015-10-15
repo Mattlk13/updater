@@ -11,10 +11,31 @@
 #include "xabstractmessagehandler.h"
 
 XAbstractMessageHandler::XAbstractMessageHandler(QObject *parent)
-  : QAbstractMessageHandler(parent)
+  : QAbstractMessageHandler(parent),
+    _acceptDefaults(false)
 {
 }
 
 XAbstractMessageHandler::~XAbstractMessageHandler()
 {
+}
+
+bool XAbstractMessageHandler::acceptDefaults() const
+{
+  return _acceptDefaults;
+}
+
+/** Set whether or not the message handler should automatically accept
+    the defaultButton when ::question() is called. This is initially
+    set to @c false.
+
+    @param accept @c true indicates yes, accept the default value
+                  @c false indicates no, ask the question and let the user decide
+    @return the previous setting
+*/
+bool XAbstractMessageHandler::setAcceptDefaults(const bool accept)
+{
+  bool result = _acceptDefaults;
+  _acceptDefaults = accept;
+  return result;
 }

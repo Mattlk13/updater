@@ -21,6 +21,12 @@ class XAbstractMessageHandler : public QAbstractMessageHandler
     virtual ~XAbstractMessageHandler();
 
     virtual QMessageBox::StandardButton question(const QString &question, QMessageBox::StandardButtons buttons = QMessageBox::Ok, QMessageBox::StandardButton defaultButton = QMessageBox::NoButton) = 0;
+
+    bool acceptDefaults() const;
+    bool setAcceptDefaults(const bool accept);
+
+  protected:
+    bool _acceptDefaults;
 };
 
 #endif
