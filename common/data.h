@@ -13,9 +13,14 @@
 
 #include <QString>
 
-extern QString _name;
-extern QString _copyright;
-extern QString _version;
+class Updater {
+  public:
+    static QString  build;
+    static QString  copyright;
+    static bool     loggedIn;
+    static QString  name;
+    static QString  version;
+};
 
 extern int     _usrid;
 

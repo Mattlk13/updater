@@ -12,18 +12,10 @@
 
 #include <QObject>
 
-#if defined Q_WS_WIN
-QString _name = QObject::tr("Update Manager for Windows");
-#elif defined Q_WS_X11
-QString _name = QObject::tr("Update Manager for Linux");
-#elif defined Q_WS_MAC
-QString _name = QObject::tr("Update Manager for Mac");
-#else
-QString _name = QObject::tr("Update Manager");
-#endif
-
-
-QString _copyright = QObject::tr("Copyright (c) 2004-2015 OpenMFG, LLC., d/b/a xTuple.");
-QString _version = QObject::tr("2.3.0");
+QString Updater::build     = QObject::tr("%1 %2").arg(__DATE__, __TIME__);
+QString Updater::copyright = QObject::tr("Copyright (c) 2004-2015 OpenMFG, LLC., d/b/a xTuple.");
+bool    Updater::loggedIn  = false;
+QString Updater::name      = QObject::tr("Update Manager");
+QString Updater::version   = QObject::tr("2.4.0Beta");
 
 int     _usrid;

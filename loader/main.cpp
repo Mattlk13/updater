@@ -151,14 +151,14 @@ int main(int argc, char* argv[])
     return 1;
   }
 
-  if (! db.isOpen())
+  if (!db.open())
   {
     ParameterList params;
-    params.append("name",      _name);
-    params.append("copyright", _copyright.toAscii().data());
-    params.append("version",   _version.toAscii().data());
-    params.append("build",     __DATE__ " " __TIME__); // use C++ string concat
-    params.append("username", username);
+    params.append("name",      Updater::name);
+    params.append("copyright", Updater::copyright);
+    params.append("version",   Updater::version);
+    params.append("build",     Updater::build);
+    params.append("username",  username);
 
     if (haveDatabaseURL)
       params.append("databaseURL", _databaseURL.toAscii().data());
@@ -172,6 +172,7 @@ int main(int argc, char* argv[])
     {
       _databaseURL = newdlg._databaseURL;
       username     = newdlg._user;
+      Updater::loggedIn = true;
     }
 
     QSqlQuery su;
