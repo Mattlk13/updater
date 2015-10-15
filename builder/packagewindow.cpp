@@ -253,7 +253,7 @@ void PackageWindow::sAddPrereq()
 
 void PackageWindow::sRaisePrereq()
 {
-#if QT_VERSION < 0x050000
+#if FALSE
   int idx = _prereqs->currentItem();
   if(idx <= 0)
     return;
@@ -280,7 +280,7 @@ void PackageWindow::sRaisePrereq()
 
 void PackageWindow::sLowerPrereq()
 {
-#if QT_VERSION < 0x050000
+#if FALSE
   int idx = _prereqs->currentItem();
   if(idx == (int)(_prereqs->count() - 1))
     return;
@@ -513,7 +513,7 @@ void PackageWindow::sAddScript()
 
 void PackageWindow::sRaiseScript()
 {
-#if QT_VERSION < 0x050000
+#if FALSE
   int idx = _scripts->currentItem();
   if(idx <= 0)
     return;
@@ -539,7 +539,7 @@ void PackageWindow::sRaiseScript()
 
 void PackageWindow::sLowerScript()
 {
-#if QT_VERSION < 0x050000
+#if FALSE
   int idx = _scripts->currentItem();
   if(idx == (int)(_scripts->count() - 1))
     return;
@@ -565,7 +565,7 @@ void PackageWindow::sLowerScript()
 
 void PackageWindow::sRemoveScript()
 {
-#if QT_VERSION < 0x050000
+#if FALSE
   QString name = _scripts->currentItem()->text();
   foreach (Script *it, _package->_scripts)
     if (it->name() == name)
@@ -658,7 +658,7 @@ void PackageWindow::sAddReport()
 
 void PackageWindow::sRemoveReport()
 {
-#if QT_VERSION < 0x050000
+#if FALSE
   QString name = _reports->currentItem()->text();
   foreach (Loadable *it, _package->_reports)
     if (it->name() == name)
