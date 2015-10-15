@@ -8,20 +8,21 @@
  * to be bound by its terms.
  */
 
-// std c++ libraries
-#include <cstdlib>
-#include <iostream>
-#include <string>
+#include <stdio.h>
 
 #include "cmdlinemessagehandler.h"
 
 #include <QDebug>
+#include <QString>
 #include <QTextDocument>
+#include <QTextStream>
 
 class CmdLineMessageHandlerPrivate
 {
   public:
     CmdLineMessageHandlerPrivate()
+      : input(stdin, QIODevice::ReadOnly),
+        output(stdout, QIODevice::WriteOnly)
     {
       if (buttonMap.isEmpty()) {
         buttonMap.insert(QMessageBox::Ok,              QObject::tr("Ok"));
@@ -46,6 +47,8 @@ class CmdLineMessageHandlerPrivate
     }
 
     static QMap<QMessageBox::StandardButton, QString> buttonMap;
+    QTextStream input;
+    QTextStream output;
 };
 
 QMap<QMessageBox::StandardButton, QString> CmdLineMessageHandlerPrivate::buttonMap;
@@ -73,14 +76,14 @@ void CmdLineMessageHandler::handleMessage(QtMsgType type,
   Q_UNUSED(sourceLocation);
   QTextDocument tmpdoc;
   tmpdoc.setHtml(description);
-  std::string msg = tmpdoc.toPlainText().trimmed().toStdString();
+  QString msg = tmpdoc.toPlainText().trimmed();
   switch (type)
   {
-    case QtFatalMsg:     std::cout << "Error:"    << msg << "\n"; break;
+    case QtFatalMsg:     _p->output << "Error:" << msg << endl; break;
     case QtDebugMsg:
     case QtWarningMsg:
     case QtCriticalMsg:
-    default:             std::cout << msg << "\n"; break;
+    default:             _p->output << msg << endl; break;
   }
 }
 
@@ -94,7 +97,7 @@ QMessageBox::StandardButton CmdLineMessageHandler::question(const QString &quest
   int idx = 1;
   QTextDocument tmpdoc;
   tmpdoc.setHtml(question);
-  std::string msg = tmpdoc.toPlainText().trimmed().toStdString();
+  QString msg = tmpdoc.toPlainText().trimmed();
   foreach (const QMessageBox::StandardButton &key, _p->buttonMap.keys())
   {
     if (buttons & key)
@@ -117,14 +120,23 @@ QMessageBox::StandardButton CmdLineMessageHandler::question(const QString &quest
   qsprompt = qsprompt.append("\n")
                      .append(tr("[%1]").arg(defaultIdx));
 
-  int selection = -1;
-  std::string input;
+  int  selection = -1;
+  bool valid;
+  QString answer;
   while (! choice.contains(selection))
   {
-    std::cout << msg << "\n" << qsprompt.toStdString() << " ";
+    _p->output << msg << "\n" << qsprompt << " ";
+    _p->output.flush();
+    answer = _p->input.readLine();
 
-    std::cin >> input;
-    selection = input.empty() ? defaultIdx : atoi(input.c_str());
+    if (answer.isEmpty())
+      selection = defaultIdx;
+    else
+    {
+      selection = answer.toInt(&valid);
+      if (! valid)
+        selection = -1;
+    }
   }
 
   return choice.value(selection);
