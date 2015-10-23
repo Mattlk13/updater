@@ -1,7 +1,7 @@
 /*
  * This file is part of the xTuple ERP: PostBooks Edition, a free and
  * open source Enterprise Resource Planning software suite,
- * Copyright (c) 1999-2012 by OpenMFG LLC, d/b/a xTuple.
+ * Copyright (c) 1999-2015 by OpenMFG LLC, d/b/a xTuple.
  * It is licensed to you under the Common Public Attribution License
  * version 1.0, the full text of which (including xTuple-specific Exhibits)
  * is available at www.xtuple.com/CPAL.  By using this software, you agree
@@ -41,7 +41,8 @@ CreateTrigger::CreateTrigger(const QDomElement &elem, QStringList &msg, QList<bo
   }
 }
 
-int CreateTrigger::writeToDB(const QByteArray &pdata, const QString pkgname, QString &errMsg)
+int CreateTrigger::writeToDB(const QByteArray &pdata, const QString pkgname,
+                             ParameterList &params, QString &errMsg)
 {
   if (DEBUG)
     qDebug("CreateTrigger::writeToDb(%s, %s, &errMsg)",
@@ -53,7 +54,6 @@ int CreateTrigger::writeToDB(const QByteArray &pdata, const QString pkgname, QSt
                              "  AND  (tgrelid=pg_class.oid)"
                              "  AND  (relnamespace=pg_namespace.oid)"
                              "  AND  (nspname=<? value('schema') ?>));");
-  ParameterList params;
   int returnVal = CreateDBObj::writeToDB(pdata, pkgname, params, errMsg);
 
   delete _oidMql;

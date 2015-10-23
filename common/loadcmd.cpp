@@ -1,7 +1,7 @@
 /*
  * This file is part of the xTuple ERP: PostBooks Edition, a free and
  * open source Enterprise Resource Planning software suite,
- * Copyright (c) 1999-2012 by OpenMFG LLC, d/b/a xTuple.
+ * Copyright (c) 1999-2015 by OpenMFG LLC, d/b/a xTuple.
  * It is licensed to you under the Common Public Attribution License
  * version 1.0, the full text of which (including xTuple-specific Exhibits)
  * is available at www.xtuple.com/CPAL.  By using this software, you agree
@@ -128,8 +128,9 @@ QDomElement LoadCmd::createElement(QDomDocument &doc)
   return elem;
 }
 
-int LoadCmd::writeToDB(const QString pkgname, QString &errMsg)
+int LoadCmd::writeToDB(const QByteArray &pdata, const QString pkgname, QString &errMsg)
 {
+  Q_UNUSED(pdata);
   _selectMql = new MetaSQLQuery("SELECT cmd_id, -1, -1"
                       "  FROM <? literal('tablename') ?> "
                       " WHERE (cmd_name=<? value('name') ?>);");

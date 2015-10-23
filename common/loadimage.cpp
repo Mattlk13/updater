@@ -1,7 +1,7 @@
 /*
  * This file is part of the xTuple ERP: PostBooks Edition, a free and
  * open source Enterprise Resource Planning software suite,
- * Copyright (c) 1999-2012 by OpenMFG LLC, d/b/a xTuple.
+ * Copyright (c) 1999-2015 by OpenMFG LLC, d/b/a xTuple.
  * It is licensed to you under the Common Public Attribution License
  * version 1.0, the full text of which (including xTuple-specific Exhibits)
  * is available at www.xtuple.com/CPAL.  By using this software, you agree
@@ -96,7 +96,7 @@ int LoadImage::writeToDB(const QByteArray &pdata, const QString pkgname, QString
     imageBuffer.open(QIODevice::ReadWrite);
     imageIo.setDevice(&imageBuffer);
     imageIo.setFormat(_filename.right(_filename.size() -
-                                      _filename.lastIndexOf(".") - 1).toAscii());
+                                      _filename.lastIndexOf(".") - 1).toLatin1());
     if (DEBUG)
       qDebug("LoadImage::writeToDB() image has format %s",
              imageIo.format().data());
@@ -111,7 +111,7 @@ int LoadImage::writeToDB(const QByteArray &pdata, const QString pkgname, QString
     }
 
     imageBuffer.close();
-    encodeddata = QUUEncode(imageBuffer).toAscii();
+    encodeddata = QUUEncode(imageBuffer).toLatin1();
     if (DEBUG) qDebug("LoadImage::writeToDB() image was uuencoded: %s",
                       encodeddata.left(160).data());
   }
@@ -121,7 +121,7 @@ int LoadImage::writeToDB(const QByteArray &pdata, const QString pkgname, QString
                       " WHERE (image_name=<? value('name') ?>);");
 
   _updateMql = new MetaSQLQuery("UPDATE <? literal('tablename') ?> "
-                      "   SET image_data=E<? value('source') ?>,"
+                      "   SET image_data=<? value('source') ?>,"
                       "       image_descrip=<? value('notes') ?>"
                       " WHERE (image_id=<? value('id') ?>)"
                       " RETURNING image_id AS id;");
@@ -130,7 +130,7 @@ int LoadImage::writeToDB(const QByteArray &pdata, const QString pkgname, QString
                       "   image_id, image_name, image_data, image_descrip"
                       ") VALUES ("
                       "  DEFAULT, <? value('name') ?>,"
-                      "  E<? value('source') ?>,"
+                      "  <? value('source') ?>,"
                       "  <? value('notes') ?>"
                       ") RETURNING image_id AS id;");
 

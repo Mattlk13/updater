@@ -18,5 +18,4 @@ bool    Updater::loggedIn  = false;
 QString Updater::name      = QObject::tr("Update Manager");
 QString Updater::version   = QObject::tr("2.4.0Beta");
 
-QString _user;
 int     _usrid;

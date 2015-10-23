@@ -10,7 +10,6 @@
 
 #include "loaderwindow.h"
 
-#include <QApplication>
 #include <QDomDocument>
 #include <QFileDialog>
 #include <QFileInfo>
@@ -25,6 +24,8 @@
 #include <QDateTime>
 
 #include <dbtools.h>
+#include <cmdlinemessagehandler.h>
+#include <guimessagehandler.h>
 #include <gunzip.h>
 #include <createfunction.h>
 #include <createtable.h>
@@ -63,27 +64,86 @@
 #endif
 
 extern QString _databaseURL;
-extern bool _autoRun;
 
-QString LoaderWindow::_rollbackMsg(tr("<p><font color=\"red\">The upgrade has "
+QString LoaderWindow::_rollbackMsg(tr("<p><font color='red'>The upgrade has "
                                       "been aborted due to an error and your "
                                       "database was rolled back to the state "
                                       "it was in when the upgrade was "
                                       "initiated.</font><br>"));
+
+class LoaderWindowPrivate
+{
+  private:
+    LoaderWindow *_p;
+
+  public:
+    LoaderWindowPrivate(LoaderWindow *parent)
+      : _p(parent),
+        handler(0)
+    {
+      setCmdline(false);
+    }
+
+    ~LoaderWindowPrivate()
+    {
+      delete handler;
+    }
+
+    void setCmdline(bool p)
+    {
+      useCmdline = p;
+      GuiMessageHandler *g = dynamic_cast<GuiMessageHandler *>(handler);
+      if (useCmdline)
+      {
+        if (g)
+          delete handler;
+        handler = new CmdLineMessageHandler(_p);
+      }
+      else
+      {
+        if (! g)
+          delete handler;
+        g = new GuiMessageHandler(_p);
+        g->setDestination(QtWarningMsg, _p->_text);
+        g->setDestination(QtDebugMsg,   _p->_status);
+        handler = g;
+      }
+    }
+
+    QString elapsedTime(QDateTime startTime, QDateTime endTime)
+    {
+      int elapsed = startTime.secsTo(endTime);
+      int sec = elapsed % 60;
+      elapsed = (elapsed - sec) / 60;
+      int min = elapsed % 60;
+      elapsed = (elapsed - min) / 60;
+      int hour = elapsed;
+      return _p->tr("<p>Total elapsed time is %1h %2m %3s</p>").arg(hour).arg(min).arg(sec);
+    }
+
+    int disableTriggers();
+    int enableTriggers();
+
+    XAbstractMessageHandler *handler;
+    int         dbTimerId;
+    bool        multitrans;
+    QStringList triggers;      // to be disabled and enabled
+    bool        useCmdline;
+};
 
 LoaderWindow::LoaderWindow(QWidget* parent, const char* name, Qt::WindowFlags fl)
     : QMainWindow(parent, fl)
 {
   setupUi(this);
   setObjectName(name);
+  _p = new LoaderWindowPrivate(this);
 
   (void)statusBar();
 
-  _multitrans = false;
-  _premultitransfile = false;
+  _p->multitrans = false;
   _package = 0;
   _files = 0;
-  _dbTimerId = startTimer(60000);
+  _p->dbTimerId = startTimer(60000);
   fileNew();
 
   setWindowTitle();
@@ -91,12 +151,17 @@ LoaderWindow::LoaderWindow(QWidget* parent, const char* name, Qt::WindowFlags fl
 
 LoaderWindow::~LoaderWindow()
 {
-  // no need to delete child widgets, Qt does it all for us
+  delete _p;
 }
 
 void LoaderWindow::languageChange()
 {
   retranslateUi(this);
+}
+
+XAbstractMessageHandler *LoaderWindow::handler() const
+{
+  return _p->handler;
 }
 
 void LoaderWindow::fileNew()
@@ -141,7 +206,7 @@ bool LoaderWindow::openFile(QString pfilename)
   QByteArray data = gunzipFile(fi.filePath());
   if(data.isEmpty())
   {
-    QMessageBox::warning(this, tr("Error Opening File"),
+    _p->handler->message(QtFatalMsg,
                          tr("<p>The file %1 appears to be empty or it is not "
                             "compressed in the expected format.")
                          .arg(fi.filePath()));
@@ -151,7 +216,7 @@ bool LoaderWindow::openFile(QString pfilename)
   _files = new TarFile(data);
   if(!_files->isValid())
   {
-    QMessageBox::warning(this, tr("Error Opening file"),
+    _p->handler->message(QtFatalMsg,
                          tr("<p>The file %1 does not appear to contain a valid "
                             "update package (not a valid TAR file?).")
                          .arg(fi.filePath()));
@@ -167,14 +232,14 @@ bool LoaderWindow::openFile(QString pfilename)
   contentsnames << "package.xml" << "contents.xml";
   for (int i = 0; i < contentsnames.size() && contentFile.isNull(); i++)
   {
-    for(QStringList::Iterator mit = list.begin(); mit != list.end(); ++mit)
+    foreach (QString mit, list)
     {
-      QFileInfo fi(*mit);
+      QFileInfo fi(mit);
       if(fi.fileName() == contentsnames.at(i))
       {
         if(!contentFile.isNull())
         {
-          QMessageBox::warning(this, tr("Error Opening file"),
+          _p->handler->message(QtFatalMsg,
                                tr("<p>Multiple %1 files found in %2. "
                                   "Currently only packages containing a single "
                                   "content.xml file are supported.")
@@ -183,7 +248,7 @@ bool LoaderWindow::openFile(QString pfilename)
           _files = 0;
           return false;
         }
-        contentFile = *mit;
+        contentFile = mit;
       }
     }
   }
@@ -193,7 +258,7 @@ bool LoaderWindow::openFile(QString pfilename)
 
   if(contentFile.isNull())
   {
-    QMessageBox::warning(this, tr("Error Opening file"),
+    _p->handler->message(QtFatalMsg,
                          tr("<p>No %1 file was found in package %2.")
                          .arg(contentsnames.join(" or ")).arg(fi.filePath()));
     delete _files;
@@ -215,7 +280,7 @@ bool LoaderWindow::openFile(QString pfilename)
   int errLine, errCol;
   if(!doc.setContent(docData, &errMsg, &errLine, &errCol))
   {
-    QMessageBox::warning(this, tr("Error Opening file"),
+    _p->handler->message(QtFatalMsg,
                          tr("<p>There was a problem reading the %1 file in "
                             "this package.<br>%2<br>Line %3, Column %4")
                          .arg(contentFile).arg(errMsg)
@@ -229,7 +294,7 @@ bool LoaderWindow::openFile(QString pfilename)
   _text->setEnabled(true);
 
   QString delayedWarning;
-  _package = new Package(doc.documentElement(), msgList, fatalList);
+  _package = new Package(doc.documentElement(), msgList, fatalList, _p->handler);
   if (msgList.size() > 0)
   {
     bool fatal = false;
@@ -237,7 +302,8 @@ bool LoaderWindow::openFile(QString pfilename)
       qDebug("LoaderWindow::fileOpen()  i fatal msg");
     for (int i = 0; i < msgList.size(); i++)
     {
-      _text->append(QString("<br><font color=\"%1\">%2</font>")
+      _p->handler->message(QtWarningMsg,
+                  QString("<br><font color='%1'>%2</font>")
                     .arg(fatalList.at(i) ? "red" : "orange")
                     .arg(msgList.at(i)));
       fatal = fatal || fatalList.at(i);
@@ -247,12 +313,13 @@ bool LoaderWindow::openFile(QString pfilename)
     }
     if (fatal)
     {
-      _text->append(tr("<p><font color=\"red\">The %1 file appears "
+      _p->handler->message(QtWarningMsg,
+          tr("<p><font color='red'>The %1 file appears "
                        "to be invalid.</font></p>").arg(contentFile));
       return false;
     }
     else
-      delayedWarning = tr("<p><font color=\"orange\">The %1 file "
+      delayedWarning = tr("<p><font color='orange'>The %1 file "
                           "seems to have problems. You should contact %2 "
                           "before proceeding.</font></p>")
                       .arg(contentFile)
@@ -285,71 +352,61 @@ bool LoaderWindow::openFile(QString pfilename)
            _progress->maximum());
 
   _status->setEnabled(true);
-  _status->setText(tr("<p><b>Checking Prerequisites!</b></p>"));
-  _text->append("<p><b>Prerequisites</b>:<br>");
+  _p->handler->message(QtWarningMsg, "<h3>Checking Prerequisites...</h3>");
   bool allOk = true;
-  // check prereqs
-  QString str;
-  QStringList strlist;
-  QStringList::Iterator slit;
-  XSqlQuery qry;
-  for(QList<Prerequisite*>::iterator i = _package->_prerequisites.begin();
-      i != _package->_prerequisites.end(); ++i)
-  {
-    _status->setText(tr("<p><b>Checking Prerequisites!</b></p><p>%1...</p>")
-                       .arg((*i)->name()));
-    _text->append(tr("%1").arg((*i)->name()));
-    if (! (*i)->met(errMsg))
-    {
-      allOk = false;
-      str = QString("<blockquote><font size=\"+1\" color=\"red\"><b>%1</b></font></blockquote>").arg(tr("Failed"));
-      if (! errMsg.isEmpty())
-       str += tr("<p>%1</p>").arg(errMsg);
 
-      strlist = (*i)->providerList();
-      if(strlist.count() > 0)
+  QString str;
+  XSqlQuery qry;
+  if (_package->_prerequisites.size() > 0)
+  {
+    foreach (Prerequisite *i, _package->_prerequisites)
+    {
+      _p->handler->message(QtWarningMsg, tr("checking %1<br/>").arg(i->name()));
+      if (! i->met(errMsg, _p->handler))
       {
-        str += tr("<b>Requires:</b><br>");
-        str += tr("<ul>");
-        for(slit = strlist.begin(); slit != strlist.end(); ++slit)
-          str += tr("<li>%1: %2</li>").arg((*i)->provider(*slit).package()).arg((*i)->provider(*slit).info());
-        str += tr("</ul>");
+        allOk = false;
+        str = QString("<font size='+1' color='red'><b>Failed</b></font>");
+        if (! errMsg.isEmpty())
+         str += tr("<p>%1</p>").arg(errMsg);
+
+        QStringList strlist = i->providerList();
+        if (! strlist.isEmpty())
+        {
+          str += tr("<b>Requires:</b>");
+          str += "<ul>";
+          foreach (QString slit, strlist)
+            str += tr("<li>%1: %2</li>").arg(i->provider(slit).package(), i->provider(slit).info());
+          str += "</ul>";
+        }
+        
+        _p->handler->message(QtWarningMsg, str);
+        if (DEBUG)
+          qDebug("%s", qPrintable(str));
       }
-      
-      str += tr("</blockquote>");
-      _text->append(str);
-      if (DEBUG)
-        qDebug("%s", qPrintable(str));
     }
   }
 
-  if(!allOk)
+  if (! allOk)
   {
-    _status->setText(tr("<p><b>Checking Prerequisites!</b></p><p>One or more prerequisites <b>FAILED</b>. These prerequisites must be satisified before continuing.</p>"));
+    _p->handler->message(QtFatalMsg,
+                         tr("<p>One or more prerequisite checks <b>FAILED</b>. "
+                            "These prerequisites must be satisified before continuing.</p>"));
     return false;
   }
 
-  _status->setText(tr("<p><b>Checking Prerequisites!</b></p><p>Check completed.</p>"));
+  _p->handler->message(QtDebugMsg, tr("<p>Prerequisite Checks completed.</p>"));
   if (delayedWarning.isEmpty())
-    _text->append(tr("<p><b><font color=\"green\">Ready to Start update!</font></b></p>"));
+    _p->handler->message(QtWarningMsg,
+        tr("<h2><font color='green'>Ready to Start update!</font></h2>"));
   else
   {
-    _text->append(tr("<p><b>Ready to Start update!</b></p>"));
-    _text->append(delayedWarning);
+    _p->handler->message(QtWarningMsg, tr("<h2>Ready to Start update!</h2>"));
+    _p->handler->message(QtWarningMsg, delayedWarning);
   }
-  _text->append(tr("<p><b>NOTE</b>: Have you backed up your database? If not, you should "
+  _p->handler->message(QtWarningMsg,
+      tr("<p><b>NOTE</b>: Have you backed up your database? If not, you should "
                    "backup your database now. It is good practice to backup a database "
-                   "before updating it.</p>"));
-
-  /*
-  single vs multiple transaction functionality was added at around the same
-  time as OpenMFG/PostBooks 2.3.0 was being developed. before 2.3.0, update
-  scripts from xTuple (OpenMFG, LLC) assumed multiple transactions (one per
-  file within the package). take advantage of the update package naming
-  conventions to see if we've been given a pre-2.3.0 file and *need* to use
-  multiple transactions.
-  */
-  _premultitransfile = false;
+                   "before updating it.</p><hr/>"));
 
   _start->setEnabled(true);
   return true;
@@ -382,10 +439,9 @@ void LoaderWindow::fileExit()
 
 void LoaderWindow::helpContents()
 {
-  launchBrowser(this, "http://wiki.xtuple.org/UpdaterDoc");
+  launchBrowser(this, "http://www.xtuple.org/UpdaterDoc");
 }
 
-// copied from xtuple/guiclient/guiclient.cpp and made independent of Qt3Support
 // TODO: put in a generic place and use both from there or use WebKit instead
 void LoaderWindow::launchBrowser(QWidget * w, const QString & url)
 {
@@ -409,8 +465,7 @@ void LoaderWindow::launchBrowser(QWidget * w, const QString & url)
   browser.append("/usr/bin/firefox");
   browser.append("/usr/bin/mozilla");
 #endif
-  for(QStringList::const_iterator i=browser.begin(); i!=browser.end(); ++i) {
-    QString app = *i;
+  foreach (QString app, browser) {
     if(app.contains("%s")) {
       app.replace("%s", url);
     } else {
@@ -426,7 +481,7 @@ void LoaderWindow::launchBrowser(QWidget * w, const QString & url)
         proc->waitForFinished())
       return;
 
-    QMessageBox::warning(w, tr("Failed to open URL"),
+    _p->handler->message(QtFatalMsg,
                          tr("<p>Before you can run a web browser you must "
                             "set the environment variable BROWSER to point "
                             "to the browser executable.") );
@@ -446,39 +501,42 @@ void LoaderWindow::helpAbout()
 
 void LoaderWindow::timerEvent( QTimerEvent * e )
 {
-  if(e->timerId() == _dbTimerId)
+  if(e->timerId() == _p->dbTimerId)
   {
-    QSqlDatabase db = QSqlDatabase::database(QSqlDatabase::defaultConnection,FALSE);
+    QSqlDatabase db = QSqlDatabase::database(QSqlDatabase::defaultConnection, false);
     if(db.isValid())
       XSqlQuery qry("SELECT CURRENT_DATE;");
     // if we are not connected then we have some problems!
   }
 }
 
+// used only in LoaderWindow::sStart()
+struct dbobj {
+  QString header;
+  QString footer;
+  QList<Script*>   scriptlist;
+  QList<Loadable*> loadablelist;
 
-/*
- use _multitrans to see if the user requested a single transaction wrapped
- around the entire import
- but use _premultitransfile to see if we need multiple transactions
- even if the user requested one.
- */
+  dbobj(QString h, QString s, QList<Script*>   l) : header(h), footer(s), scriptlist(l)   {}
+  dbobj(QString h, QString s, QList<Loadable*> l) : header(h), footer(s), loadablelist(l) {}
+};
+
 bool LoaderWindow::sStart()
 {
   bool returnValue = false;
 
   _start->setEnabled(false);
-  _text->setText("<p></p>");
 
   QDateTime startTime = QDateTime::currentDateTime();
-  _text->append(tr("<p>Starting Update at %1</p>").arg(startTime.toString()));
+  _p->handler->message(QtWarningMsg,
+      tr("<p>Starting Update at %1</p>").arg(startTime.toString()));
 
   QString prefix = QString::null;
   if(!_package->id().isEmpty())
     prefix = _package->id() + "/";
 
   XSqlQuery qry;
-  if(!_multitrans && !_premultitransfile)
-    qry.exec("begin;");
+  qry.exec("begin;");
 
   PkgSchema schema(_package->name(),
                    tr("Schema to hold contents of %1").arg(_package->name()));
@@ -488,29 +546,22 @@ bool LoaderWindow::sStart()
   {
     pkgid = _package->writeToDB(errMsg);
     if (pkgid >= 0)
-      _text->append(tr("Saving Package Header was successful."));
+      _p->handler->message(QtWarningMsg, tr("Saving Package Header was successful."));
     else
     {
-      _text->append(errMsg);
+      _p->handler->message(QtWarningMsg, errMsg);
       qry.exec("rollback;");
-      if(!_multitrans && !_premultitransfile)
-      {
-        _text->append(_rollbackMsg);
-        return false;
-      }
+      _p->handler->message(QtWarningMsg, _rollbackMsg);
+      return false;
     }
 
     if (schema.create(errMsg) >= 0 && schema.setPath(errMsg) >= 0)
-      _text->append(tr("Saving Schema for Package was successful."));
+      _p->handler->message(QtWarningMsg, tr("Saving Schema for Package was successful."));
     else
     {
-      _text->append(errMsg);
+      _p->handler->message(QtWarningMsg, errMsg);
       qry.exec("rollback;");
-      if(!_multitrans && !_premultitransfile)
-      {
-        _text->append(_rollbackMsg);
-        return false;
-      }
+      _p->handler->message(QtWarningMsg, _rollbackMsg);
     }
   }
 
@@ -519,382 +570,240 @@ bool LoaderWindow::sStart()
 
   if (_package->_initscripts.size() > 0)
   {
-    _status->setText(tr("<p><b>Running Initialization</b></p>"));
-    _text->append(tr("<p>Applying initialization scripts...</p>"));
-    for(QList<InitScript*>::iterator i = _package->_initscripts.begin();
-        i != _package->_initscripts.end(); ++i)
+    _p->handler->message(QtWarningMsg, tr("<h3>Applying initialization scripts...</h3>"));
+    foreach (Script *i, _package->_initscripts)
     {
-      tmpReturn = applySql(*i, _files->_list[prefix + (*i)->filename()]);
+      _p->handler->message(QtDebugMsg, tr("applying %1<br/>").arg(i->filename()));
+      tmpReturn = applySql(i, _files->_list[prefix + i->filename()]);
       if (tmpReturn < 0)
       {
         qry.exec("ROLLBACK;");
-        _text->append(_rollbackMsg);
+        _p->handler->message(QtWarningMsg, _rollbackMsg);
         return false;
       }
       else
         ignoredErrCnt += tmpReturn;
     }
+    _p->handler->message(QtWarningMsg, tr("<p>Finished initialization scripts</p>"));
+    if (DEBUG)
+      qDebug("LoaderWindow::sStart() progress %d out of %d",
+             _progress->value(), _progress->maximum());
   }
-  if (DEBUG)
-    qDebug("LoaderWindow::sStart() progress %d out of %d after initialization",
-           _progress->value(), _progress->maximum());
 
-  if (disableTriggers() < 0)
+  if (_p->disableTriggers() < 0)
   {
     qry.exec("ROLLBACK;");
-    _text->append(_rollbackMsg);
+    _p->handler->message(QtWarningMsg, _rollbackMsg);
     return false;
   }
 
   if (_package->_privs.size() > 0)
   {
-    _status->setText(tr("<p><b>Updating Privileges</b></p>"));
-    _text->append(tr("<p>Loading new Privileges...</p>"));
-    for(QList<LoadPriv*>::iterator i = _package->_privs.begin();
-        i != _package->_privs.end(); ++i)
+    _p->handler->message(QtWarningMsg, tr("<h3>Loading Privileges...</h3>"));
+    foreach (Loadable *i, _package->_privs)
     {
-      tmpReturn = applyLoadable(*i, _files->_list[prefix + (*i)->filename()]);
-      if (tmpReturn < 0)
+      tmpReturn = applyLoadable(i, _files->_list[prefix + i->filename()]);
+      if (tmpReturn < 0) {
+        qry.exec("ROLLBACK;");
+        _p->handler->message(QtWarningMsg, _rollbackMsg);
         return false;
+      }
       else
         ignoredErrCnt += tmpReturn;
     }
-    _text->append(tr("<p>Completed importing new Privileges.</p>"));
-  }
-  if (DEBUG)
-    qDebug("LoaderWindow::sStart() progress %d out of %d after privs",
-           _progress->value(), _progress->maximum());
-
-  if (_package->_scripts.size() > 0)
-  {
-    _status->setText(tr("<p><b>Updating Schema</b></p>"));
-    _text->append(tr("<p>Applying database change files...</p>"));
-    for(QList<Script*>::iterator i = _package->_scripts.begin();
-        i != _package->_scripts.end(); ++i)
-    {
-      tmpReturn = applySql(*i, _files->_list[prefix + (*i)->filename()]);
-      if (tmpReturn < 0)
-        return false;
-      else
-        ignoredErrCnt += tmpReturn;
-    }
+    _p->handler->message(QtWarningMsg, tr("<p>Finished Privileges</p>"));
+    if (DEBUG)
+      qDebug("LoaderWindow::sStart() progress %d out of %d",
+             _progress->value(), _progress->maximum());
   }
 
-  if (_package->_functions.size() > 0)
+  QList<dbobj> scriptobjs;
+  scriptobjs
+    << dbobj(tr("Applying database scripts..."),    tr("Finished database scripts"),     _package->_scripts)
+    << dbobj(tr("Loading Function definitions..."), tr("Finished Function definitions"), _package->_functions)
+    << dbobj(tr("Loading Table definitions..."),    tr("Finished Table definitions"),    _package->_tables)
+    << dbobj(tr("Loading Trigger definitions..."),  tr("Finished Trigger definitions"),  _package->_triggers)
+    << dbobj(tr("Loading View definitions..."),     tr("Finished View definitions"),     _package->_views)
+    ;
+
+  foreach (dbobj objdesc, scriptobjs)
   {
-    _status->setText(tr("<p><b>Updating Function Definitions</b></p>"));
-    _text->append(tr("<p>Loading new Function definitions...</p>"));
-    for(QList<CreateFunction*>::iterator i = _package->_functions.begin();
-        i != _package->_functions.end(); ++i)
+    if (objdesc.scriptlist.size() > 0)
     {
-      tmpReturn = applySql(*i, _files->_list[prefix + (*i)->filename()]);
-      if (tmpReturn < 0)
-        return false;
-      else
-        ignoredErrCnt += tmpReturn;
+      _p->handler->message(QtWarningMsg, tr("<h3>%1</h3>").arg(objdesc.header));
+      foreach(Script *i, objdesc.scriptlist)
+      {
+        _p->handler->message(QtDebugMsg, tr("applying %1<br/>").arg(i->filename()));
+        tmpReturn = applySql(i, _files->_list[prefix + i->filename()]);
+        if (tmpReturn < 0) {
+          qry.exec("ROLLBACK;");
+          _p->handler->message(QtWarningMsg, _rollbackMsg);
+          return false;
+        }
+        else
+          ignoredErrCnt += tmpReturn;
+      }
+      _p->handler->message(QtWarningMsg, tr("<p>%1</p>").arg(objdesc.footer));
     }
-    _text->append(tr("<p>Completed importing new function definitions.</p>"));
   }
 
-  if (_package->_tables.size() > 0)
+  QList<dbobj> loadableobjs;
+  loadableobjs
+    << dbobj(tr("Loading MetaSQL statements..."),   tr("Finished MetaSQL statements"),   _package->_metasqls)
+    << dbobj(tr("Loading Report definitions..."),   tr("Finished Report definitions"),   _package->_reports)
+    << dbobj(tr("Loading User Interface forms..."), tr("Finished User Interface forms"), _package->_appuis)
+    << dbobj(tr("Loading Application scripts..."),  tr("Finished Application scripts"),  _package->_appscripts)
+    << dbobj(tr("Loading Images..."),               tr("Finished loading Images"),       _package->_images)
+    ;
+  foreach (dbobj objdesc, loadableobjs)
   {
-    _status->setText(tr("<p><b>Updating Table Definitions</b></p>"));
-    _text->append(tr("<p>Loading new Table definitions...</p>"));
-    for(QList<CreateTable*>::iterator i = _package->_tables.begin();
-        i != _package->_tables.end(); ++i)
+    if (objdesc.loadablelist.size() > 0)
     {
-      tmpReturn = applySql(*i, _files->_list[prefix + (*i)->filename()]);
-      if (tmpReturn < 0)
-        return false;
-      else
-        ignoredErrCnt += tmpReturn;
+      _p->handler->message(QtWarningMsg, tr("<h3>%1</h3>").arg(objdesc.header));
+      foreach (Loadable *i, objdesc.loadablelist)
+      {
+        _p->handler->message(QtDebugMsg, tr("applying %1<br/>").arg(i->filename()));
+        tmpReturn = applyLoadable(i, _files->_list[prefix + i->filename()]);
+        if (tmpReturn < 0) {
+          qry.exec("ROLLBACK;");
+          _p->handler->message(QtWarningMsg, _rollbackMsg);
+          return false;
+        }
+        else
+          ignoredErrCnt += tmpReturn;
+      }
+      _p->handler->message(QtWarningMsg, tr("<p>%1</p>").arg(objdesc.footer));
     }
-    _text->append(tr("<p>Completed importing new table definitions.</p>"));
+    if (DEBUG)
+      qDebug("LoaderWindow::sStart() progress %d out of %d", _progress->value(), _progress->maximum());
   }
-
-  if (_package->_triggers.size() > 0)
-  {
-    _status->setText(tr("<p><b>Updating Trigger Definitions</b></p>"));
-    _text->append(tr("<p>Loading new Trigger definitions...</p>"));
-    for(QList<CreateTrigger*>::iterator i = _package->_triggers.begin();
-        i != _package->_triggers.end(); ++i)
-    {
-      tmpReturn = applySql(*i, _files->_list[prefix + (*i)->filename()]);
-      if (tmpReturn < 0)
-        return false;
-      else
-        ignoredErrCnt += tmpReturn;
-    }
-    _text->append(tr("<p>Completed importing new trigger definitions.</p>"));
-  }
-
-  if (_package->_views.size() > 0)
-  {
-    _status->setText(tr("<p><b>Updating View Definitions</b></p>"));
-    _text->append(tr("<p>Loading new View definitions...</p>"));
-    for(QList<CreateView*>::iterator i = _package->_views.begin();
-        i != _package->_views.end(); ++i)
-    {
-      tmpReturn = applySql(*i, _files->_list[prefix + (*i)->filename()]);
-      if (tmpReturn < 0)
-        return false;
-      else
-        ignoredErrCnt += tmpReturn;
-    }
-    _text->append(tr("<p>Completed importing new view definitions.</p>"));
-  }
-
-  if (_package->_metasqls.size() > 0)
-  {
-    _status->setText(tr("<p><b>Updating MetaSQL Statements</b></p>"));
-    _text->append(tr("<p>Loading new MetaSQL Statements...</p>"));
-    for(QList<LoadMetasql*>::iterator i = _package->_metasqls.begin();
-        i != _package->_metasqls.end(); ++i)
-    {
-      tmpReturn = applyLoadable(*i, _files->_list[prefix + (*i)->filename()]);
-      if (tmpReturn < 0)
-        return false;
-      else
-        ignoredErrCnt += tmpReturn;
-    }
-    _text->append(tr("<p>Completed importing new MetaSQL Statements.</p>"));
-  }
-  if (DEBUG)
-    qDebug("LoaderWindow::sStart() progress %d out of %d after metasql",
-           _progress->value(), _progress->maximum());
-
-  if (_package->_reports.size() > 0)
-  {
-    _status->setText(tr("<p><b>Updating Report Definitions</b></p>"));
-    _text->append(tr("<p>Loading new report definitions...</p>"));
-    for(QList<LoadReport*>::iterator i = _package->_reports.begin();
-        i != _package->_reports.end(); ++i)
-    {
-      tmpReturn = applyLoadable(*i, _files->_list[prefix + (*i)->filename()]);
-      if (tmpReturn < 0)
-        return false;
-      else
-        ignoredErrCnt += tmpReturn;
-    }
-    _text->append(tr("<p>Completed importing new report definitions.</p>"));
-  }
-  if (DEBUG)
-    qDebug("LoaderWindow::sStart() progress %d out of %d after reports",
-           _progress->value(), _progress->maximum());
-
-  if (_package->_appuis.size() > 0)
-  {
-    _status->setText(tr("<p><b>Updating User Interface Definitions</b></p>"));
-    _text->append(tr("<p>Loading User Interface definitions...</p>"));
-    for(QList<LoadAppUI*>::iterator i = _package->_appuis.begin();
-        i != _package->_appuis.end(); ++i)
-    {
-      if (DEBUG)
-        qDebug("LoaderWindow::sStart() - loading ui %s in file %s",
-               qPrintable((*i)->name()), qPrintable((*i)->filename()));
-      tmpReturn = applyLoadable(*i, _files->_list[prefix + (*i)->filename()]);
-      if (tmpReturn < 0)
-        return false;
-      else
-        ignoredErrCnt += tmpReturn;
-    }
-    _text->append(tr("<p>Completed importing User Interface definitions.</p>"));
-  }
-  if (DEBUG)
-    qDebug("LoaderWindow::sStart() progress %d out of %d after uis",
-           _progress->value(), _progress->maximum());
-
-  if (_package->_appscripts.size() > 0)
-  {
-    _status->setText(tr("<p><b>Updating Application Script Definitions</b></p>"));
-    _text->append(tr("<p>Loading Application Script definitions...</p>"));
-    for(QList<LoadAppScript*>::iterator i = _package->_appscripts.begin();
-        i != _package->_appscripts.end(); ++i)
-    {
-      if (DEBUG)
-        qDebug("LoaderWindow::sStart() - loading appscript %s in file %s",
-               qPrintable((*i)->name()), qPrintable((*i)->filename()));
-      tmpReturn = applyLoadable(*i, _files->_list[prefix + (*i)->filename()]);
-      if (tmpReturn < 0)
-        return false;
-      else
-        ignoredErrCnt += tmpReturn;
-    }
-    _text->append(tr("<p>Completed importing Application Script definitions.</p>"));
-  }
-  if (DEBUG)
-    qDebug("LoaderWindow::sStart() progress %d out of %d after app scripts",
-           _progress->value(), _progress->maximum());
 
   if (_package->_cmds.size() > 0)
   {
-    _status->setText(tr("<p><b>Updating Custom Commands</b></p>"));
-    _text->append(tr("<p>Loading new Custom Commands...</p>"));
+    _p->handler->message(QtWarningMsg, tr("<h3>Loading Custom Commands...</h3>"));
     if (! _package->system() &&
         (! qry.exec("ALTER TABLE pkgcmd DISABLE TRIGGER pkgcmdaltertrigger;") ||
          ! qry.exec("ALTER TABLE pkgcmdarg DISABLE TRIGGER pkgcmdargaltertrigger;")))
     {
       qry.exec("ROLLBACK;");
-      _text->append(_rollbackMsg);
+      _p->handler->message(QtWarningMsg, _rollbackMsg);
       return false;
     }
-    for(QList<LoadCmd*>::iterator i = _package->_cmds.begin();
-        i != _package->_cmds.end(); ++i)
+    foreach (Loadable *i, _package->_cmds)
     {
-      if (DEBUG)
-        qDebug("LoaderWindow::sStart() - loading cmd %s", qPrintable((*i)->name()));
-      tmpReturn = applyLoadable(*i, _files->_list[prefix + (*i)->filename()]);
-      if (tmpReturn < 0)
+      tmpReturn = applyLoadable(i, _files->_list[prefix + i->filename()]);
+      if (tmpReturn < 0) {
+        qry.exec("ROLLBACK;");
+        _p->handler->message(QtWarningMsg, _rollbackMsg);
         return false;
+      }
       else
         ignoredErrCnt += tmpReturn;
     }
     XSqlQuery qry("SELECT updateCustomPrivs();");
-    _text->append(tr("<p>Completed importing new Custom Commands.</p>"));
+    _p->handler->message(QtWarningMsg, tr("<p>Finished Custom Commands</p>"));
+    if (DEBUG)
+      qDebug("LoaderWindow::sStart() progress %d out of %d",
+             _progress->value(), _progress->maximum());
   }
-  if (DEBUG)
-    qDebug("LoaderWindow::sStart() progress %d out of %d after cmds",
-           _progress->value(), _progress->maximum());
-
-  if (_package->_images.size() > 0)
-  {
-    _status->setText(tr("<p><b>Updating Image Definitions</b></p>"));
-    _text->append(tr("<p>Loading Image definitions...</p>"));
-    for(QList<LoadImage*>::iterator i = _package->_images.begin();
-        i != _package->_images.end(); ++i)
-    {
-      if (DEBUG)
-        qDebug("LoaderWindow::sStart() - loading image %s in file %s",
-               qPrintable((*i)->name()), qPrintable((*i)->filename()));
-      tmpReturn = applyLoadable(*i, _files->_list[prefix + (*i)->filename()]);
-      if (tmpReturn < 0)
-        return false;
-      else
-        ignoredErrCnt += tmpReturn;
-    }
-    _text->append(tr("<p>Completed importing Image definitions.</p>"));
-  }
-  if (DEBUG)
-    qDebug("LoaderWindow::sStart() progress %d out of %d after images",
-           _progress->value(), _progress->maximum());
 
   if (_package->_prerequisites.size() > 0)
   {
-    _status->setText(tr("<p><b>Updating Package Dependencies</b></p>"));
-    _text->append(tr("<p>Loading Package Dependencies...</p>"));
-    for(QList<Prerequisite*>::iterator i = _package->_prerequisites.begin();
-        i != _package->_prerequisites.end(); ++i)
+    _p->handler->message(QtWarningMsg, tr("<h3>Loading Package Dependencies...</h3>"));
+    foreach (Prerequisite *i, _package->_prerequisites)
     {
-      if ((*i)->type() == Prerequisite::Dependency)
+      if (i->type() == Prerequisite::Dependency)
       {
-        if (DEBUG)
-          qDebug("LoaderWindow::sStart() - saving dependency %s",
-                 qPrintable((*i)->name()));
-        if ((*i)->writeToDB(_package->name(), errMsg) >= 0)
-          _text->append(tr("Saving dependency %1 was successful.")
-                        .arg((*i)->name()));
-        else
+        _p->handler->message(QtDebugMsg, tr("applying dependency %1<br/>").arg(i->name()));
+        if (i->writeToDB(_package->name(), errMsg) < 0)
         {
-          _text->append(errMsg);
+          _p->handler->message(QtWarningMsg, errMsg);
           qry.exec("rollback;");
-          if(!_multitrans && !_premultitransfile)
-          {
-            _text->append(_rollbackMsg);
-            return false;
-          }
+          _p->handler->message(QtWarningMsg, _rollbackMsg);
+          return false;
         }
       }
       _progress->setValue(_progress->value() + 1);
     }
-    _text->append(tr("<p>Completed updating dependencies.</p>"));
+    _p->handler->message(QtWarningMsg, tr("<p>Completed updating dependencies.</p>"));
+    if (DEBUG)
+      qDebug("LoaderWindow::sStart() progress %d out of %d",
+             _progress->value(), _progress->maximum());
   }
-  if (DEBUG)
-    qDebug("LoaderWindow::sStart() progress %d out of %d after dependencies",
-           _progress->value(), _progress->maximum());
 
-  if (enableTriggers() < 0)
+  if (_p->enableTriggers() < 0)
   {
     qry.exec("ROLLBACK;");
-    _text->append(_rollbackMsg);
+    _p->handler->message(QtWarningMsg, _rollbackMsg);
     return false;
   }
 
   if (_package->_finalscripts.size() > 0)
   {
-    _status->setText(tr("<p><b>Running Final Cleanup</b></p>"));
-    _text->append(tr("<p>Applying final cleanup scripts...</p>"));
-    for(QList<FinalScript*>::iterator i = _package->_finalscripts.begin();
-        i != _package->_finalscripts.end(); ++i)
+    _p->handler->message(QtWarningMsg, tr("<h3>Applying final cleanup scripts...</h3>"));
+    foreach (Script *i, _package->_finalscripts)
     {
-      tmpReturn = applySql(*i, _files->_list[prefix + (*i)->filename()]);
+      _p->handler->message(QtDebugMsg, tr("applying %1<br/>").arg(i->filename()));
+      tmpReturn = applySql(i, _files->_list[prefix + i->filename()]);
       if (tmpReturn < 0)
         return false;
       else
         ignoredErrCnt += tmpReturn;
     }
+    _p->handler->message(QtWarningMsg, tr("<p>Finished final cleanup</p>"));
+    if (DEBUG)
+      qDebug("LoaderWindow::sStart() progress %d out of %d",
+             _progress->value(), _progress->maximum());
   }
-  if (DEBUG)
-    qDebug("LoaderWindow::sStart() progress %d out of %d after final cleanup",
-           _progress->value(), _progress->maximum());
 
   _progress->setValue(_progress->value() + 1);
 
   if (_alwaysrollback->isChecked())
   {
-    _text->append(tr("<p>The Update has been rolled back.</p>"));
     qry.exec("rollback;");
+    _p->handler->message(QtWarningMsg, tr("<h2>The Update has been rolled back as requested.</h2>"));
+    returnValue = true;
   }
-  else if (ignoredErrCnt > 0 && (_multitrans || _premultitransfile) &&
-           QMessageBox::question(this, tr("Ignore Errors?"),
-                              tr("<p>One or more errors were ignored while "
-                                 "processing this Package. Are you sure you "
-                                 "want to commit these changes?</p><p>If you "
-                                 "answer 'No' then this import will be rolled "
-                                 "back.</p>"),
-                              QMessageBox::Yes,
-                              QMessageBox::No | QMessageBox::Default) == QMessageBox::Yes)
+  else if (ignoredErrCnt > 0 &&
+           _p->handler->question(tr("<h2>One or more errors were ignored while "
+                                    "processing this Package. Are you sure you "
+                                    "want to commit these changes?</h2><p>If you "
+                                    "answer 'No' then this import will be rolled "
+                                    "back.</p>"),
+                              QMessageBox::Yes | QMessageBox::No,
+                              QMessageBox::No) == QMessageBox::Yes)
   {
     qry.exec("commit;");
-    _text->append(tr("<p>The Update is now complete but errors were ignored!</p>"));
-// this is currently being done in two places and it shouldn't be
+    _p->handler->message(QtWarningMsg,
+        tr("<h2>The Update is now complete but errors were ignored!</h2>"));
+
     QDateTime endTime = QDateTime::currentDateTime();
-    _text->append(tr("<p>Completed Update at %1</p>").arg(endTime.toString()));
-    int elapsed = startTime.secsTo(endTime);
-    int sec = elapsed % 60;
-    elapsed = (elapsed - sec) / 60;
-    int min = elapsed % 60;
-    elapsed = (elapsed - min) / 60;
-    int hour = elapsed;
-    _text->append(tr("<p>Total elapsed time is %1h %2m %3s</p>").arg(hour).arg(min).arg(sec));
-// end of the section being done in two places
+    _p->handler->message(QtWarningMsg,
+        tr("<p>Completed Update at %1</p>").arg(endTime.toString()));
+    _p->handler->message(QtWarningMsg, _p->elapsedTime(startTime, endTime));
     _progress->setValue(_progress->maximum());
+    returnValue = true;
   }
   else if (ignoredErrCnt > 0)
   {
     qry.exec("rollback;");
-    _text->append(_rollbackMsg);
+    _p->handler->message(QtWarningMsg, _rollbackMsg);
+    returnValue = false;
   }
   else
   {
     qry.exec("commit;");
-    _text->append(tr("<p>The Update is now complete!</p>"));
-// this is currently being done in two places and it shouldn't be
+    _p->handler->message(QtWarningMsg, tr("<h2>The Update is now complete!</h2>"));
+
     QDateTime endTime = QDateTime::currentDateTime();
-    _text->append(tr("<p>Completed Update at %1</p>").arg(endTime.toString()));
-    int elapsed = startTime.secsTo(endTime);
-    int sec = elapsed % 60;
-    elapsed = (elapsed - sec) / 60;
-    int min = elapsed % 60;
-    elapsed = (elapsed - min) / 60;
-    int hour = elapsed;
-    _text->append(tr("<p>Total elapsed time is %1h %2m %3s</p>").arg(hour).arg(min).arg(sec));
-// end of the section being done in two places
+    _p->handler->message(QtWarningMsg,
+        tr("<p>Completed Update at %1</p>").arg(endTime.toString()));
+    _p->handler->message(QtWarningMsg, _p->elapsedTime(startTime, endTime));
     _progress->setValue(_progress->maximum());
     returnValue = true;
-    // Close the program if the -autoRun argument is used and the upgrade is successful.
-    if (_autoRun)
+    if (_p->useCmdline)
     {
-      fileExit();
+      fileExit();       // need this so the app will quit its event loop
       return returnValue;
     }
   }
@@ -905,7 +814,8 @@ bool LoaderWindow::sStart()
 
   if (! _package->system() && schema.clearPath(errMsg) < 0)
   {
-    _text->append(tr("<p><font color=\"orange\">The update completed "
+    _p->handler->message(QtWarningMsg,
+        tr("<p><font color='orange'>The update completed "
                      "successfully but there was an error resetting "
                      "the schema path:</font></p><pre>%1</pre>"
                      "<p>Quit the updater and start it "
@@ -916,9 +826,9 @@ bool LoaderWindow::sStart()
   return returnValue;
 }
 
-void LoaderWindow::setMultipleTransactions(bool mt)
+void LoaderWindow::setCmdline(bool useCmdline)
 {
-  _multitrans = mt;
+  _p->setCmdline(useCmdline);
 }
 
 void LoaderWindow::setDebugPkg(bool p)
@@ -938,37 +848,27 @@ int LoaderWindow::applySql(Script *pscript, const QByteArray psql)
   int  returnVal = 0;
   do {
     QString message;
-    if(_multitrans || _premultitransfile)
-    {
-      qry.exec("begin;");
-      if (pscript->onError() == Script::Default)
-        pscript->setOnError(Script::Prompt);
-    }
-    else
-    {
-      qry.exec("SAVEPOINT updaterFile;");
-      if (pscript->onError() == Script::Default)
-        pscript->setOnError(Script::Stop);
-    }
+    qry.exec("SAVEPOINT updaterFile;");
+    if (pscript->onError() == Script::Default)
+      pscript->setOnError(Script::Stop);
 
-    int scriptreturn = pscript->writeToDB(psql, _package->name(), message);
+    ParameterList params;
+    int scriptreturn = pscript->writeToDB(psql, _package->name(), params, message);
     if (scriptreturn == -1)
     {
-      _text->append(tr("<font color=\"%1\">%2</font><br>")
+      _p->handler->message(QtWarningMsg,
+          tr("<font color='%1'>%2</font><br>")
                     .arg("orange")
                     .arg(message));
     }
     else if (scriptreturn < 0)
     {
-      bool fatal = ! ((_multitrans || _premultitransfile) &&
-                      pscript->onError() == Script::Ignore);
-      _text->append(tr("<p><font color=\"%1\">%2</font><br>")
+      bool fatal = ! (pscript->onError() == Script::Ignore);
+      _p->handler->message(QtWarningMsg,
+          tr("<p><font color='%1'>%2</font><br>")
                     .arg(fatal ? "red" : "orange")
                     .arg(message));
-      if(_multitrans || _premultitransfile)
-        qry.exec("rollback;");
-      else
-        qry.exec("ROLLBACK TO updaterFile;");
+      qry.exec("ROLLBACK TO updaterFile;");
 
       switch (pscript->onError())
       {
@@ -976,14 +876,15 @@ int LoaderWindow::applySql(Script *pscript, const QByteArray psql)
           if (DEBUG)
             qDebug("LoaderWindow::applySql() taking Script::Stop branch");
           qry.exec("rollback;");
-          _text->append(_rollbackMsg);
+          _p->handler->message(QtWarningMsg, _rollbackMsg);
           return scriptreturn;
           break;
 
         case Script::Ignore:
           if (DEBUG)
             qDebug("LoaderWindow::applySql() taking Script::Ignore branch");
-          _text->append(tr("<font color=\"orange\"><b>IGNORING</b> the above "
+          _p->handler->message(QtWarningMsg,
+              tr("<font color='orange'><b>IGNORING</b> the above "
                            "errors and skipping script %1.</font><br>")
                           .arg(pscript->filename()));
           returnVal++;
@@ -995,38 +896,40 @@ int LoaderWindow::applySql(Script *pscript, const QByteArray psql)
         default:
           if (DEBUG)
             qDebug("LoaderWindow::applySql() taking default branch");
-          switch(QMessageBox::question(this, tr("Encountered an Error"),
+          switch(_p->handler->question(
                 tr("<pre>%1.</pre><p>Please select the action "
                    "that you would like to take.").arg(message),
-                tr("Retry"), tr("Ignore"), tr("Abort"), 0, 0 ))
+                QMessageBox::Retry|QMessageBox::Ignore|QMessageBox::Abort,
+                QMessageBox::Retry))
           {
-            case 0:
-              _text->append(tr("RETRYING..."));
+            case QMessageBox::Retry:
+              _p->handler->message(QtWarningMsg, tr("RETRYING..."));
               again = true;
               break;
-            case 1:
-              _text->append(tr("<font color=\"orange\"><b>IGNORING</b> the "
+            case QMessageBox::Ignore:
+              _p->handler->message(QtWarningMsg,
+                  tr("<font color='orange'><b>IGNORING</b> the "
                                "above errors at user request and "
                                "skipping script %1.</font><br>")
                               .arg(pscript->filename()) );
+              again = false;
               returnVal++;
               break;
-            case 2:
+            case QMessageBox::Abort:
             default:
               qry.exec("rollback;");
-              _text->append(_rollbackMsg);
+              _p->handler->message(QtWarningMsg, _rollbackMsg);
               return scriptreturn;
               break;
           }
       }
     }
     else
-      _text->append(tr("Import of %1 was successful.").arg(pscript->filename()));
+      _p->handler->message(QtWarningMsg,
+          tr("Import of %1 was successful.").arg(pscript->filename()));
   } while (again);
-  if ((_multitrans || _premultitransfile) && ! _alwaysrollback->isChecked())
-    qry.exec("commit;");
-  else
-    qry.exec("RELEASE SAVEPOINT updaterFile;");
+
+  qry.exec("RELEASE SAVEPOINT updaterFile;");
 
   _progress->setValue(_progress->value() + 1);
 
@@ -1047,31 +950,19 @@ int LoaderWindow::applyLoadable(Loadable *pscript, const QByteArray psql)
   do {
     QString message;
 
-    if(_multitrans || _premultitransfile)
-    {
-      qry.exec("begin;");
-      if (pscript->onError() == Script::Default)
-        pscript->setOnError(Script::Prompt);
-    }
-    else
-    {
-      qry.exec("SAVEPOINT updaterFile;");
-      if (pscript->onError() == Script::Default)
-        pscript->setOnError(Script::Stop);
-    }
+    qry.exec("SAVEPOINT updaterFile;");
+    if (pscript->onError() == Script::Default)
+      pscript->setOnError(Script::Stop);
 
     int scriptreturn = pscript->writeToDB(psql, _package->name(), message);
     if (scriptreturn < 0)
     {
-      bool fatal = ! ((_multitrans || _premultitransfile) &&
-                      pscript->onError() == Script::Ignore);
-      _text->append(tr("<br><font color=\"%1\">%2</font><br>")
+      bool fatal = ! (pscript->onError() == Script::Ignore);
+      _p->handler->message(QtWarningMsg,
+          tr("<br><font color='%1'>%2</font><br>")
                     .arg(fatal ? "red" : "orange")
                     .arg(message));
-      if(_multitrans || _premultitransfile)
-        qry.exec("rollback;");
-      else
-        qry.exec("ROLLBACK TO updaterFile;");
+      qry.exec("ROLLBACK TO updaterFile;");
 
       switch (pscript->onError())
       {
@@ -1079,14 +970,15 @@ int LoaderWindow::applyLoadable(Loadable *pscript, const QByteArray psql)
           if (DEBUG)
             qDebug("LoaderWindow::applyLoadable() taking Script::Stop branch");
           qry.exec("rollback;");
-          _text->append(_rollbackMsg);
+          _p->handler->message(QtWarningMsg, _rollbackMsg);
           return scriptreturn;
           break;
 
         case Script::Ignore:
           if (DEBUG)
             qDebug("LoaderWindow::applyLoadable() taking Script::Ignore branch");
-          _text->append(tr("<font color=\"orange\"><b>IGNORING</b> the above "
+          _p->handler->message(QtWarningMsg,
+              tr("<font color='orange'><b>IGNORING</b> the above "
                            "errors and skipping script %1.</font><br>")
                           .arg(pscript->filename()));
           returnVal++;
@@ -1098,186 +990,136 @@ int LoaderWindow::applyLoadable(Loadable *pscript, const QByteArray psql)
         default:
           if (DEBUG)
             qDebug("LoaderWindow::applyLoadable() taking default branch");
-          switch(QMessageBox::question(this, tr("Encountered an Error"),
+          switch(_p->handler->question(
                 tr("<pre>%1.</pre><p>Please select the action "
                    "that you would like to take.").arg(message),
-                tr("Retry"), tr("Ignore"), tr("Abort"), 0, 0 ))
+                QMessageBox::Retry|QMessageBox::Ignore|QMessageBox::Abort,
+                QMessageBox::Retry))
           {
-            case 0:
-              _text->append(tr("RETRYING..."));
+            case QMessageBox::Retry:
+              _p->handler->message(QtWarningMsg, tr("RETRYING..."));
               again = true;
               break;
-            case 1:
-              _text->append(tr("<font color=\"orange\"><b>IGNORING</b> the "
+            case QMessageBox::Ignore:
+              _p->handler->message(QtWarningMsg,
+                  tr("<font color='orange'><b>IGNORING</b> the "
                                "above errors at user request and "
                                "skipping script %1.</font><br>")
                               .arg(pscript->filename()) );
+              again = false;
               returnVal++;
               break;
-            case 2:
+            case QMessageBox::Abort:
             default:
               qry.exec("rollback;");
-              _text->append(_rollbackMsg);
+              _p->handler->message(QtWarningMsg, _rollbackMsg);
               return scriptreturn;
               break;
           }
       }
     }
     else
-      _text->append(tr("Import of %1 was successful.").arg(pscript->filename()));
+      _p->handler->message(QtWarningMsg,
+          tr("Import of %1 was successful.").arg(pscript->filename()));
   } while (again);
-  if ((_multitrans || _premultitransfile) && ! _alwaysrollback->isChecked())
-    qry.exec("commit;");
-  else
-    qry.exec("RELEASE SAVEPOINT updaterFile;");
+
+  qry.exec("RELEASE SAVEPOINT updaterFile;");
 
   _progress->setValue(_progress->value() + 1);
 
   return returnVal;
 }
 
-int LoaderWindow::disableTriggers()
+int LoaderWindowPrivate::disableTriggers()
 {
   QString schema;
 
-  for (QList<LoadPriv*>::iterator i = _package->_privs.begin();
-       i != _package->_privs.end(); ++i)
-  {
-    schema = (*i)->schema();
-    if (schema.isEmpty() && ! _package->system() &&
-        ! _triggers.contains("pkgpriv"))
-      _triggers.append("pkgpriv");
-    else if (! schema.isEmpty() && "public" != schema &&
-             ! _triggers.contains(schema + ".pkgpriv"))
-      _triggers.append(schema + ".pkgpriv");
-  }
+  QMap<QString, QList<Loadable *> > loadables;
+  loadables.insert("priv",      _p->_package->_privs);
+  loadables.insert("metasql",   _p->_package->_metasqls);
+  loadables.insert("report",    _p->_package->_reports);
+  loadables.insert("uiform",    _p->_package->_appuis);
+  loadables.insert("script",    _p->_package->_appscripts);
+  loadables.insert("image",     _p->_package->_images);
 
-  if (_package->_metasqls.size() > 0)
+  if (_p->_package->_metasqls.size() > 0)
+    triggers.append("public.metasql");
+
+  foreach (QString key, loadables.keys())
   {
-    _triggers.append("public.metasql");
-    for (QList<LoadMetasql*>::iterator i = _package->_metasqls.begin();
-         i != _package->_metasqls.end(); ++i)
+    foreach (Loadable *i, loadables.value(key))
     {
-      schema = (*i)->schema();
-      if (schema.isEmpty() && ! _package->system() &&
-          ! _triggers.contains("pkgmetasql"))
-        _triggers.append("pkgmetasql");
-      else if (! schema.isEmpty() && "public" != schema &&
-               ! _triggers.contains(schema + ".pkgmetasql"))
-        _triggers.append(schema + ".pkgmetasql");
+      schema = i->schema();
+      if (schema.isEmpty() && ! _p->_package->system() && ! triggers.contains("pkg" + key))
+        triggers.append("pkgpriv");
+      else if (! schema.isEmpty() && "public" != schema && ! triggers.contains(schema + ".pkg" + key))
+        triggers.append(schema + ".pkg" + key);
     }
   }
 
-  for (QList<LoadReport*>::iterator i = _package->_reports.begin();
-       i != _package->_reports.end(); ++i)
+  foreach (Loadable *i, _p->_package->_cmds)
   {
-    schema = (*i)->schema();
-    if (schema.isEmpty() && ! _package->system() &&
-        ! _triggers.contains("pkgreport"))
-      _triggers.append("pkgreport");
-    else if (! schema.isEmpty() && "public" != schema &&
-             ! _triggers.contains(schema + ".pkgreport"))
-      _triggers.append(schema + ".pkgreport");
-  }
-
-  for (QList<LoadAppUI*>::iterator i = _package->_appuis.begin();
-       i != _package->_appuis.end(); ++i)
-  {
-    schema = (*i)->schema();
-    if (schema.isEmpty() && ! _package->system() &&
-        ! _triggers.contains("pkguiform"))
-      _triggers.append("pkguiform");
-    else if (! schema.isEmpty() && "public" != schema &&
-             ! _triggers.contains(schema + ".pkguiform"))
-      _triggers.append(schema + ".pkguiform");
-  }
-
-  for (QList<LoadAppScript*>::iterator i = _package->_appscripts.begin();
-       i != _package->_appscripts.end(); ++i)
-  {
-    schema = (*i)->schema();
-    if (schema.isEmpty() && ! _package->system() &&
-        ! _triggers.contains("pkgscript"))
-      _triggers.append("pkgscript");
-    else if (! schema.isEmpty() && "public" != schema &&
-             ! _triggers.contains(schema + ".pkgscript"))
-      _triggers.append(schema + ".pkgscript");
-  }
-
-  for (QList<LoadCmd*>::iterator i = _package->_cmds.begin();
-       i != _package->_cmds.end(); ++i)
-  {
-    schema = (*i)->schema();
-    if (schema.isEmpty() && ! _package->system() &&
-        ! _triggers.contains("pkgcmd"))
+    schema = i->schema();
+    if (schema.isEmpty() && ! _p->_package->system() &&
+        ! triggers.contains("pkgcmd"))
     {
-      _triggers.append("pkgcmd");
-      _triggers.append("pkgcmdarg");
+      triggers.append("pkgcmd");
+      triggers.append("pkgcmdarg");
     }
     else if (! schema.isEmpty() && "public" != schema &&
-             ! _triggers.contains(schema + ".pkgcmd"))
+             ! triggers.contains(schema + ".pkgcmd"))
     {
-      _triggers.append(schema + ".pkgcmd");
-      _triggers.append(schema + ".pkgcmdarg");
+      triggers.append(schema + ".pkgcmd");
+      triggers.append(schema + ".pkgcmdarg");
     }
-  }
-
-  for (QList<LoadImage*>::iterator i = _package->_images.begin();
-       i != _package->_images.end(); ++i)
-  {
-    schema = (*i)->schema();
-    if (schema.isEmpty() && ! _package->system() &&
-        ! _triggers.contains("pkgimage"))
-      _triggers.append("pkgimage");
-    else if (! schema.isEmpty() && "public" != schema &&
-             ! _triggers.contains(schema + ".pkgimage"))
-      _triggers.append(schema + ".pkgimage");
   }
 
   QRegExp beforeDot(".*\\.");
   QString empty;
-  for (int i = 0; i < _triggers.size(); i++)
+  for (int i = 0; i < triggers.size(); i++)
   {
-    QString triggername(_triggers.at(i));
+    QString triggername(triggers.at(i));
     triggername.replace(beforeDot, empty);
     XSqlQuery disableq(QString("ALTER TABLE %1 DISABLE TRIGGER %2altertrigger;")
-                       .arg(_triggers.at(i)) .arg(triggername));
+                       .arg(triggers.at(i)) .arg(triggername));
     disableq.exec();
     if (disableq.lastError().type() != QSqlError::NoError)
     {
-      _text->append(tr("<br><font color=\"red\">Could not disable %1 trigger:"
+      handler->message(QtWarningMsg,
+          _p->tr("<br><font color='red'>Could not disable %1 trigger:"
                        "<pre>%2</pre></font><br>")
-                    .arg(_triggers.at(i))
+                    .arg(triggers.at(i))
                     .arg(disableq.lastError().text()));
       return -1;
     }
   }
 
-  return _triggers.size();
+  return triggers.size();
 }
 
-int LoaderWindow::enableTriggers()
+int LoaderWindowPrivate::enableTriggers()
 {
   QRegExp beforeDot(".*\\.");
   QString empty;
-  for (int i = _triggers.size() - 1; i >= 0; i--)
+  for (int i = triggers.size() - 1; i >= 0; i--)
   {
-    QString triggername(_triggers.at(i));
+    QString triggername(triggers.at(i));
     triggername.replace(beforeDot, empty);
     XSqlQuery enableq(QString("ALTER TABLE %1 ENABLE TRIGGER %2altertrigger;")
-                       .arg(_triggers.at(i)) .arg(triggername));
+                       .arg(triggers.at(i)) .arg(triggername));
     enableq.exec();
     if (enableq.lastError().type() != QSqlError::NoError)
     {
-      _text->append(tr("<br><font color=\"red\">Could not enable %1 trigger:"
+      handler->message(QtWarningMsg,
+          _p->tr("<br><font color='red'>Could not enable %1 trigger:"
                        "<pre>%2</pre></font><br>")
-                    .arg(_triggers.at(i))
+                    .arg(triggers.at(i))
                     .arg(enableq.lastError().text()));
       return -1;
     }
   }
 
-  return _triggers.size();
+  return triggers.size();
 }
 
 void LoaderWindow::setWindowTitle()

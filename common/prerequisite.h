@@ -1,7 +1,7 @@
 /*
  * This file is part of the xTuple ERP: PostBooks Edition, a free and
  * open source Enterprise Resource Planning software suite,
- * Copyright (c) 1999-2012 by OpenMFG LLC, d/b/a xTuple.
+ * Copyright (c) 1999-2015 by OpenMFG LLC, d/b/a xTuple.
  * It is licensed to you under the Common Public Attribution License
  * version 1.0, the full text of which (including xTuple-specific Exhibits)
  * is available at www.xtuple.com/CPAL.  By using this software, you agree
@@ -17,6 +17,7 @@
 
 class QDomDocument;
 class QDomElement;
+class XAbstractMessageHandler;
 
 class PrerequisiteProvider
 {
@@ -80,7 +81,7 @@ class Prerequisite
       Dependency
     };
 
-    virtual bool met(QString &);
+    virtual bool met(QString &errMsg, XAbstractMessageHandler *handler);
     virtual int  writeToDB(const QString, QString &);
 
     QString name() const { return _name; }
@@ -102,7 +103,7 @@ class Prerequisite
 
     static QString typeToName(Type);
     static Type nameToType(const QString &);
-    static QStringList typeList(bool includeNone = TRUE);
+    static QStringList typeList(bool includeNone = true);
 
   protected:
     DependsOn  *_dependency;

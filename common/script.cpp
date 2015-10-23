@@ -1,7 +1,7 @@
 /*
  * This file is part of the xTuple ERP: PostBooks Edition, a free and
  * open source Enterprise Resource Planning software suite,
- * Copyright (c) 1999-2012 by OpenMFG LLC, d/b/a xTuple.
+ * Copyright (c) 1999-2015 by OpenMFG LLC, d/b/a xTuple.
  * It is licensed to you under the Common Public Attribution License
  * version 1.0, the full text of which (including xTuple-specific Exhibits)
  * is available at www.xtuple.com/CPAL.  By using this software, you agree
@@ -13,6 +13,7 @@
 #include <QDomDocument>
 #include <QSqlError>
 
+#include "metasql.h"
 #include "xsqlquery.h"
 
 #define DEBUG false
@@ -98,7 +99,7 @@ QStringList Script::onErrorList(bool includeDefault)
   return list;
 }
 
-int Script::writeToDB(const QByteArray &pdata, const QString annotation, QString &errMsg)
+int Script::writeToDB(const QByteArray &pdata, const QString annotation, ParameterList &params, QString &errMsg)
 {
   if (DEBUG)
     qDebug("Script::writeToDb(%s, %s, &errMsg) with onError %d",
@@ -109,7 +110,8 @@ int Script::writeToDB(const QByteArray &pdata, const QString annotation, QString
     return -1;
   }
 
-  XSqlQuery create;
+  MetaSQLQuery mql(pdata);
+  XSqlQuery create = mql.toQuery(params);
   create.exec(QString(pdata));
   if (create.lastError().type() != QSqlError::NoError)
   {

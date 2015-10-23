@@ -1,7 +1,7 @@
 /*
  * This file is part of the xTuple ERP: PostBooks Edition, a free and
  * open source Enterprise Resource Planning software suite,
- * Copyright (c) 1999-2012 by OpenMFG LLC, d/b/a xTuple.
+ * Copyright (c) 1999-2015 by OpenMFG LLC, d/b/a xTuple.
  * It is licensed to you under the Common Public Attribution License
  * version 1.0, the full text of which (including xTuple-specific Exhibits)
  * is available at www.xtuple.com/CPAL.  By using this software, you agree
@@ -43,7 +43,8 @@ CreateView::CreateView(const QDomElement &elem, QStringList &msg, QList<bool> &f
   }
 }
 
-int CreateView::writeToDB(const QByteArray &pdata, const QString pkgname, QString &errMsg)
+int CreateView::writeToDB(const QByteArray &pdata, const QString pkgname,
+                          ParameterList &params, QString &errMsg)
 {
   if (DEBUG)
     qDebug("CreateView::writeToDb(%s, %s, &errMsg)",
@@ -55,7 +56,6 @@ int CreateView::writeToDB(const QByteArray &pdata, const QString pkgname, QStrin
                              "  AND  (relkind=<? value('relkind') ?>)"
                              "  AND  (relnamespace=pg_namespace.oid)"
                              "  AND  (nspname=<? value('schema') ?>));");
-  ParameterList params;
   params.append("relkind", _relkind);
 
   int returnVal = CreateDBObj::writeToDB(pdata, pkgname, params, errMsg);

@@ -1,7 +1,7 @@
 /*
  * This file is part of the xTuple ERP: PostBooks Edition, a free and
  * open source Enterprise Resource Planning software suite,
- * Copyright (c) 1999-2012 by OpenMFG LLC, d/b/a xTuple.
+ * Copyright (c) 1999-2015 by OpenMFG LLC, d/b/a xTuple.
  * It is licensed to you under the Common Public Attribution License
  * version 1.0, the full text of which (including xTuple-specific Exhibits)
  * is available at www.xtuple.com/CPAL.  By using this software, you agree
@@ -91,8 +91,7 @@ QDomElement CreateDBObj::createElement(QDomDocument & doc)
   return elem;
 }
 
-int CreateDBObj::writeToDB(const QByteArray &pdata, const QString pkgname,
-                           ParameterList &params, QString &errMsg)
+int CreateDBObj::writeToDB(const QByteArray &pdata, const QString pkgname, ParameterList &params, QString &errMsg)
 {
   if (DEBUG)
     qDebug("CreateDBObj::writeToDB(%s, %s, &errMsg)",
@@ -106,12 +105,12 @@ int CreateDBObj::writeToDB(const QByteArray &pdata, const QString pkgname,
   else if (! pkgname.isEmpty())
     destschema = pkgname;
 
-  int returnVal = Script::writeToDB(pdata, pkgname, errMsg);
-  if (returnVal < 0)
-    return returnVal;
-
   params.append("name", _name);
   params.append("schema", destschema);
+
+  int returnVal = Script::writeToDB(pdata, pkgname, params, errMsg);
+  if (returnVal < 0)
+    return returnVal;
 
   XSqlQuery oidq = _oidMql->toQuery(params);
   if (oidq.first())

@@ -1,6 +1,5 @@
-<!DOCTYPE packageManagerDef>
 <package version="1.0"
-         id="dependencyCheck"
+         id="dependency1"
          name="parentpkg"
          developer="xTuple"
          descrip="Parent package for package dependency testing">

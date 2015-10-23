@@ -21,30 +21,26 @@
 #include <xsqlquery.h>
 
 #include "data.h"
-
 #include "loaderwindow.h"
+#include "xabstractmessagehandler.h"
 
 QString _databaseURL = "";
-bool    _autoRun     = false;
 
 int main(int argc, char* argv[])
 {
-#if defined Q_WS_WIN
-  Updater::name = QObject::tr("Update Manager for Windows");
-#elif defined Q_WS_X11
-  Updater::name = QObject::tr("Update Manager for Linux");
-#elif defined Q_WS_MAC
-  Updater::name = QObject::tr("Update Manager for Mac");
-#endif
-
-  QString username  = "";
-  bool    haveUsername    = FALSE;
-  bool    haveDatabaseURL = FALSE;
-  bool multitrans = false;
-  bool debugpkg   = false;
-  bool autoRunArg   = false;
-  bool autoRunCheck = false;
-  QString pkgfile = "";
+  QSqlDatabase db;
+  QString dbName;
+  QString hostName;
+  QString passwd;
+  QString pkgfile;
+  QString port;
+  QString username;
+  XAbstractMessageHandler *handler;
+  bool    autoRunArg      = false;
+  bool    autoRunCheck    = false;
+  bool    debugpkg        = false;
+  bool    haveDatabaseURL = false;
+  bool    acceptDefaults  = false;
 
   QApplication app(argc, argv);
   app.addLibraryPath(".");
@@ -54,159 +50,167 @@ int main(int argc, char* argv[])
 
   if (argc > 1)
   {
-    haveUsername        = FALSE;
-    bool    havePasswd          = FALSE;
-    QString passwd              = "";
-
     for (int intCounter = 1; intCounter < argc; intCounter++)
     {
       QString argument(argv[intCounter]);
 
       if (argument.startsWith("-help", Qt::CaseInsensitive))
       {
-        qWarning("%s [ -databaseURL=PSQL7://hostname:port/databasename |"
-                 " -username=databaseUserName -passwd=databasePassword |"
-                 " -noauth ]"
-                 " [ -multitrans ]"
+        qWarning("%s [ -databaseURL=PSQL7://hostname:port/databasename ]"
+                 " [ -h hostname ]"
+                 " [ -p port ]"
+                 " [ -d databasename ]"
+                 " [ -U username | -username=username ]"
+                 " [ -passwd=databasePassword ]"
                  " [ -debug ]"
-                 " [ -file=updaterFile.gz ]"
-                 " [ -autorun ]",
+                 " [ -file=updaterFile.gz | -f updaterFile.gz ]"
+                 " [ -autorun [ -D ] ]",
                  argv[0]);
         return 0;
       }
       else if (argument.startsWith("-databaseURL=", Qt::CaseInsensitive))
       {
-        haveDatabaseURL = TRUE;
+        QString protocol;
+        haveDatabaseURL = true;
         _databaseURL    = argument.right(argument.length() - 13);
+        parseDatabaseURL(_databaseURL, protocol, hostName, dbName, port);
+      }
+      else if (argument == "-h")
+      {
+        hostName = argv[++intCounter];
+      }
+      else if (argument == "-p")
+      {
+        port = argv[++intCounter];
+      }
+      else if (argument == "-d")
+      {
+        dbName = argv[++intCounter];
+      }
+      else if (argument == "-U")
+      {
+        username = argv[++intCounter];
       }
       else if (argument.startsWith("-username=", Qt::CaseInsensitive))
       {
-        haveUsername = TRUE;
-        username     = argument.right(argument.length() - 10);
+        username = argument.right(argument.length() - 10);
       }
       else if (argument.startsWith("-passwd=", Qt::CaseInsensitive))
       {
-        havePasswd = TRUE;
-        passwd     = argument.right(argument.length() - 8);
+        passwd = argument.right(argument.length() - 8);
       }
-      else if (argument.toLower() == "-noauth")
-      {
-        haveUsername = TRUE;
-        havePasswd   = TRUE;
-      }
-      else if (argument.toLower() == "-multitrans")
-        multitrans = true;
       else if (argument.toLower() == "-debug")
+      {
         debugpkg = true;
+      }
+      else if (argument == "-f")
+      {
+        pkgfile = argv[++intCounter];
+      }
       else if (argument.startsWith("-file=", Qt::CaseInsensitive))
+      {
         pkgfile = argument.right(argument.size() - argument.indexOf("=") - 1);
+      }
       else if (argument.toLower() == "-autorun")
+      {
         autoRunArg = true;
-    }
-
-    if ( (haveDatabaseURL) && (haveUsername) && (havePasswd) )
-    {
-      QSqlDatabase db;
-      QString      protocol;
-      QString      hostName;
-      QString      dbName;
-      QString      port;
-
-      db = QSqlDatabase::addDatabase("QPSQL7");
-      if (!db.isValid())
-      {
-        QMessageBox::critical(0, QObject::tr("Can not load database driver"), QObject::tr("Unable to load the databse driver. Please contact your systems adminstrator."));
-        QApplication::exit(-1);
       }
-
-      parseDatabaseURL(_databaseURL, protocol, hostName, dbName, port);
-      db.setDatabaseName(dbName);
-      db.setUserName(username);
-      db.setPassword(passwd);
-      db.setHostName(hostName);
-      db.setPort(port.toInt());
-
-      if (!db.open())
+      else if (argument == "-D")
       {
-        QMessageBox::critical(0, QObject::tr("Unable to connect to database"), QObject::tr("Unable to connect to the database with the given information."));
-        QApplication::exit(-1);
+        acceptDefaults = true;
       }
-      else
-        Updater::loggedIn = true;
     }
-
   }
 
-  if (! Updater::loggedIn)
+  LoaderWindow * mainwin = new LoaderWindow();
+  mainwin->setDebugPkg(debugpkg);
+  mainwin->setCmdline(autoRunArg);
+  handler = mainwin->handler();
+  handler->setAcceptDefaults(autoRunArg && acceptDefaults);
+
+  db = QSqlDatabase::addDatabase("QPSQL7");
+  if (!db.isValid())
+  {
+    handler->message(QtFatalMsg,
+                     QObject::tr("Unable to load the database driver. "
+                                 "Please contact your systems administrator."));
+    return 1;
+  }
+
+  db.setDatabaseName(dbName);
+  db.setUserName(username);
+  db.setPassword(passwd);
+  db.setHostName(hostName);
+  db.setPort(port.toInt());
+
+  if (!db.open() && autoRunArg)
+  {
+    handler->message(QtFatalMsg,
+                     QObject::tr("Unable to connect to the database "
+                                 "with the given information."));
+    return 1;
+  }
+
+  if (!db.open())
   {
     ParameterList params;
     params.append("name",      Updater::name);
     params.append("copyright", Updater::copyright);
     params.append("version",   Updater::version);
     params.append("build",     Updater::build);
-
-    if (haveUsername)
-      params.append("username", _user);
+    params.append("username",  username);
 
     if (haveDatabaseURL)
       params.append("databaseURL", _databaseURL.toAscii().data());
 
-    login2 newdlg(0, "", TRUE);
+    login2 newdlg(0, "", true);
     newdlg.set(params, 0);
 
     if (newdlg.exec() == QDialog::Rejected)
-      return -1;
+      return 2;
     else
     {
       _databaseURL = newdlg._databaseURL;
-      _user = newdlg._user;
+      username     = newdlg._user;
       Updater::loggedIn = true;
     }
 
     QSqlQuery su;
     su.prepare("SELECT rolsuper FROM pg_roles WHERE (rolname=:user);");
-    su.bindValue(":user", _user);
+    su.bindValue(":user", username);
     su.exec();
     if (su.first())
     {
       if (! su.value(0).toBool() &&
-          QMessageBox::question(0, QObject::tr("Not Super User"),
-                                QObject::tr("You are not logged in as a "
-                                            "database super user. The update "
-                                            "may fail. Are you sure you want "
-                                            "to continue?"),
-                                QMessageBox::Yes,
-                                QMessageBox::No | QMessageBox::Default) == QMessageBox::No)
-        return -2;
+          handler->question(QObject::tr("You are not logged in as a "
+                                        "database super user. The update "
+                                        "may fail. Are you sure you want "
+                                        "to continue?"),
+                            QMessageBox::Yes | QMessageBox::No,
+                            QMessageBox::No) == QMessageBox::No)
+        return 3;
     }
     else if (su.lastError().type() != QSqlError::NoError &&
-             QMessageBox::question(0, QObject::tr("System Error"),
-                            QObject::tr("<p>The application received a database "
-                                        "error while trying to check the user "
-                                        "status of %1. Would you like to try to "
-                                        "update anyway?<br><pre>%2")
-                            .arg(_user)
-                            .arg(su.lastError().databaseText()),
-                            QMessageBox::Yes,
-                            QMessageBox::No | QMessageBox::Default) == QMessageBox::No)
-      return -3;
+             handler->question(QObject::tr("<p>The application received a database "
+                                           "error while trying to check the user "
+                                           "status of %1. Would you like to try to "
+                                           "update anyway?</p><pre>%2</pre>")
+                            .arg(username, su.lastError().databaseText()),
+                            QMessageBox::Yes | QMessageBox::No,
+                            QMessageBox::No) == QMessageBox::No)
+      return 4;
   }
 
-  LoaderWindow * mainwin = new LoaderWindow();
-  mainwin->setMultipleTransactions(multitrans);
-  mainwin->setDebugPkg(debugpkg);
   if (! pkgfile.isEmpty())
   {
     autoRunCheck = mainwin->openFile(pkgfile);
   }
 
-  // Start the upgrade if the -autoRun argument is used and file prereqs pass.
   if (autoRunArg)
   {
     bool successful = autoRunCheck && ! pkgfile.isEmpty();
     if (successful)
     {
-      _autoRun = true;
       successful = mainwin->sStart();
     }
     if (successful)     // not else if
@@ -217,7 +221,7 @@ int main(int argc, char* argv[])
       mainwin->show();
 #else
       qWarning("%s", qPrintable(mainwin->_text->toPlainText()));
-      return 1;
+      return 5;
 #endif
     }
   }

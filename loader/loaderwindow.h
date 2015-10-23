@@ -1,7 +1,7 @@
 /*
  * This file is part of the xTuple ERP: PostBooks Edition, a free and
  * open source Enterprise Resource Planning software suite,
- * Copyright (c) 1999-2012 by OpenMFG LLC, d/b/a xTuple.
+ * Copyright (c) 1999-2015 by OpenMFG LLC, d/b/a xTuple.
  * It is licensed to you under the Common Public Attribution License
  * version 1.0, the full text of which (including xTuple-specific Exhibits)
  * is available at www.xtuple.com/CPAL.  By using this software, you agree
@@ -20,6 +20,9 @@ class TarFile;
 
 #include "ui_loaderwindow.h"
 
+class LoaderWindowPrivate;
+class XAbstractMessageHandler;
+
 class LoaderWindow : public QMainWindow, public Ui::LoaderWindow
 {
     Q_OBJECT
@@ -28,6 +31,8 @@ public:
     LoaderWindow(QWidget* parent = 0, const char* name = 0, Qt::WindowFlags fl = Qt::Window);
     ~LoaderWindow();
 
+    virtual XAbstractMessageHandler *handler() const;
+
 public slots:
     virtual void fileNew();
     virtual void fileOpen();
@@ -35,7 +40,7 @@ public slots:
     virtual void helpContents();
     virtual void helpAbout();
 
-    virtual void setMultipleTransactions(bool);
+    virtual void setCmdline(bool);
     virtual void setDebugPkg(bool);
     virtual bool openFile(QString filename);
     virtual void setWindowTitle();
@@ -56,13 +61,9 @@ protected slots:
     virtual void languageChange();
 
 private:
-    int _dbTimerId;
-    bool _multitrans;
-    bool _premultitransfile;
-    QStringList _triggers;      // to be disabled and enabled
+    LoaderWindowPrivate *_p;
 
-    int disableTriggers();
-    int enableTriggers();
+    friend class LoaderWindowPrivate;
 
 };
 
