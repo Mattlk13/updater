@@ -161,7 +161,7 @@ int main(int argc, char* argv[])
     params.append("username",  username);
 
     if (haveDatabaseURL)
-      params.append("databaseURL", _databaseURL.toAscii().data());
+      params.append("databaseURL", _databaseURL.toLatin1().data());
 
     login2 newdlg(0, "", true);
     newdlg.set(params, 0);
