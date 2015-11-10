@@ -16,7 +16,7 @@
 #include "metasql.h"
 #include "xsqlquery.h"
 
-#define DEBUG false
+#define DEBUG true
 
 QString Script::_sqlerrtxt = TR("The following error was encountered "
                                          "while trying to import %1 into the "
@@ -112,7 +112,6 @@ int Script::writeToDB(const QByteArray &pdata, const QString annotation, Paramet
 
   MetaSQLQuery mql(pdata);
   XSqlQuery create = mql.toQuery(params);
-  create.exec(QString(pdata));
   if (create.lastError().type() != QSqlError::NoError)
   {
     errMsg = _sqlerrtxt.arg(filename())
