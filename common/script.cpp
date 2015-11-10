@@ -16,7 +16,7 @@
 #include "metasql.h"
 #include "xsqlquery.h"
 
-#define DEBUG true
+#define DEBUG false
 
 QString Script::_sqlerrtxt = TR("The following error was encountered "
                                          "while trying to import %1 into the "
