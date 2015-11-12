@@ -112,7 +112,6 @@ int Script::writeToDB(const QByteArray &pdata, const QString annotation, Paramet
 
   MetaSQLQuery mql(pdata);
   XSqlQuery create = mql.toQuery(params);
-  create.exec(QString(pdata));
   if (create.lastError().type() != QSqlError::NoError)
   {
     errMsg = _sqlerrtxt.arg(filename())
