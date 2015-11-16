@@ -10,6 +10,7 @@
 
 #include "script.h"
 
+#include <QDebug>
 #include <QDomDocument>
 #include <QSqlError>
 
@@ -101,17 +102,19 @@ QStringList Script::onErrorList(bool includeDefault)
 
 int Script::writeToDB(const QByteArray &pdata, const QString annotation, ParameterList &params, QString &errMsg)
 {
+  Q_UNUSED(params);
   if (DEBUG)
-    qDebug("Script::writeToDb(%s, %s, &errMsg) with onError %d",
-           pdata.data(), qPrintable(annotation), _onError);
+    qDebug() << "Script::writeToDb(" << pdata << annotation << "params" << errMsg
+             << ") with onError" << _onError;
   if (pdata.isEmpty())
   {
     errMsg = TR("The file %1 is empty.").arg(filename());
     return -1;
   }
 
-  MetaSQLQuery mql(pdata);
-  XSqlQuery create = mql.toQuery(params);
+  XSqlQuery create;
+  create.exec(QString(pdata));
+  
   if (create.lastError().type() != QSqlError::NoError)
   {
     errMsg = _sqlerrtxt.arg(filename())
