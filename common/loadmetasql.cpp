@@ -66,7 +66,8 @@ int LoadMetasql::writeToDB(const QByteArray &pdata, const QString pkgname, QStri
     return -2;
   }
 
-  QString metasqlStr = QString(pdata);
+  const char *fileContent = pdata.data();
+  QString metasqlStr = QString::fromLocal8Bit(fileContent);
   QStringList lines  = metasqlStr.split("\n");
   QRegExp groupRE    = QRegExp("(^\\s*--\\s*GROUP:\\s*)(.*)",Qt::CaseInsensitive);
   QRegExp nameRE     = QRegExp("(^\\s*--\\s*NAME:\\s*)(.*)", Qt::CaseInsensitive);
