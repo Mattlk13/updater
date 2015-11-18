@@ -110,7 +110,8 @@ int Script::writeToDB(const QByteArray &pdata, const QString annotation, Paramet
     return -1;
   }
 
-  MetaSQLQuery mql(pdata);
+  const char *data = pdata.data();
+  MetaSQLQuery mql(QString::fromLocal8Bit(data));
   XSqlQuery create = mql.toQuery(params);
   if (create.lastError().type() != QSqlError::NoError)
   {

@@ -128,9 +128,11 @@ QDomElement Loadable::createElement(QDomDocument & doc)
 int Loadable::writeToDB(const QByteArray &pdata, const QString pkgname,
                         QString &errMsg, ParameterList &params)
 {
+  const char *fileContent = pdata.data();
+
   params.append("name",   _name);
   params.append("type",   _pkgitemtype);
-  params.append("source", QString(pdata));
+  params.append("source", QString::fromLocal8Bit(fileContent));
   params.append("notes",  _comment);
 
   // alter the name of the loadable's table if necessary
