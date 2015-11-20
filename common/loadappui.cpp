@@ -129,7 +129,7 @@ int LoadAppUI::writeToDB(const QByteArray &pdata, const QString pkgname, QString
   _updateMql = new MetaSQLQuery("UPDATE <? literal('tablename') ?> "
                       "   SET uiform_order=<? value('grade') ?>, "
                       "       uiform_enabled=<? value('enabled') ?>,"
-                      "       uiform_source=E<? value('source') ?>,"
+                      "       uiform_source=<? value('source') ?>,"
                       "       uiform_notes=<? value('notes') ?> "
                       " WHERE (uiform_id=<? value('id') ?>) "
                       "RETURNING uiform_id AS id;");
@@ -141,7 +141,7 @@ int LoadAppUI::writeToDB(const QByteArray &pdata, const QString pkgname, QString
                       ") VALUES ("
                       "    DEFAULT, <? value('name') ?>,"
                       "    <? value('grade') ?>, <? value('enabled') ?>,"
-                      "    E<? value('source') ?>,"
+                      "    <? value('source') ?>,"
                       "    <? value('notes') ?>) "
                       "RETURNING uiform_id AS id;");
 
