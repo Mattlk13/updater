@@ -175,6 +175,12 @@ int main(int argc, char* argv[])
       Updater::loggedIn = true;
     }
 
+    QSqlQuery set("SET standard_conforming_strings TO true;");
+    if (set.lastError().type() != QSqlError::NoError)
+      handler->message(QtWarningMsg,
+                       QObject::tr("Unable to set standard_conforming_strings. "
+                                   "Updates may fail with unexpected errors."));
+
     QSqlQuery su;
     su.prepare("SELECT rolsuper FROM pg_roles WHERE (rolname=:user);");
     su.bindValue(":user", username);

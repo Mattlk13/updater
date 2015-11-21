@@ -141,7 +141,7 @@ int LoadReport::writeToDB(const QByteArray &pdata, const QString pkgname, QStrin
 
   _updateMql = new MetaSQLQuery("UPDATE <? literal('tablename') ?> "
                       "   SET report_descrip=<? value('notes') ?>, "
-                      "       report_source=E<? value('source') ?> "
+                      "       report_source=<? value('source') ?> "
                       " WHERE (report_id=<? value('id') ?>) "
                       "RETURNING report_id AS id;");
 
@@ -150,7 +150,7 @@ int LoadReport::writeToDB(const QByteArray &pdata, const QString pkgname, QStrin
                       "    report_grade, report_source, report_descrip"
                       ") VALUES ("
                       "    DEFAULT, <? value('name') ?>,"
-                      "    <? value('grade') ?>, E<? value('source') ?>,"
+                      "    <? value('grade') ?>, <? value('source') ?>,"
                       "    <? value('notes') ?>) "
                       "RETURNING report_id AS id;");
 
