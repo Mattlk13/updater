@@ -766,7 +766,7 @@ to be bound by its terms.</comment>
  <connections>
   <connection>
    <sender>fileNewAction</sender>
-   <signal>activated()</signal>
+   <signal>triggered()</signal>
    <receiver>PackageWindow</receiver>
    <slot>fileNew()</slot>
    <hints>
@@ -782,7 +782,7 @@ to be bound by its terms.</comment>
   </connection>
   <connection>
    <sender>fileOpenAction</sender>
-   <signal>activated()</signal>
+   <signal>triggered()</signal>
    <receiver>PackageWindow</receiver>
    <slot>fileOpen()</slot>
    <hints>
@@ -798,7 +798,7 @@ to be bound by its terms.</comment>
   </connection>
   <connection>
    <sender>fileSaveAction</sender>
-   <signal>activated()</signal>
+   <signal>triggered()</signal>
    <receiver>PackageWindow</receiver>
    <slot>fileSave()</slot>
    <hints>
@@ -814,7 +814,7 @@ to be bound by its terms.</comment>
   </connection>
   <connection>
    <sender>fileSaveAsAction</sender>
-   <signal>activated()</signal>
+   <signal>triggered()</signal>
    <receiver>PackageWindow</receiver>
    <slot>fileSaveAs()</slot>
    <hints>
@@ -830,7 +830,7 @@ to be bound by its terms.</comment>
   </connection>
   <connection>
    <sender>fileExitAction</sender>
-   <signal>activated()</signal>
+   <signal>triggered()</signal>
    <receiver>PackageWindow</receiver>
    <slot>fileExit()</slot>
    <hints>
@@ -846,7 +846,7 @@ to be bound by its terms.</comment>
   </connection>
   <connection>
    <sender>helpIndexAction</sender>
-   <signal>activated()</signal>
+   <signal>triggered()</signal>
    <receiver>PackageWindow</receiver>
    <slot>helpIndex()</slot>
    <hints>
@@ -862,7 +862,7 @@ to be bound by its terms.</comment>
   </connection>
   <connection>
    <sender>helpContentsAction</sender>
-   <signal>activated()</signal>
+   <signal>triggered()</signal>
    <receiver>PackageWindow</receiver>
    <slot>helpContents()</slot>
    <hints>
@@ -878,7 +878,7 @@ to be bound by its terms.</comment>
   </connection>
   <connection>
    <sender>helpAboutAction</sender>
-   <signal>activated()</signal>
+   <signal>triggered()</signal>
    <receiver>PackageWindow</receiver>
    <slot>helpAbout()</slot>
    <hints>
