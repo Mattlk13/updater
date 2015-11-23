@@ -102,7 +102,7 @@ int LoadAppScript::writeToDB(const QByteArray &pdata, const QString pkgname, QSt
   _updateMql = new MetaSQLQuery("UPDATE <? literal('tablename') ?> "
                       "   SET script_order=<? value('grade') ?>, "
                       "       script_enabled=<? value('enabled') ?>,"
-                      "       script_source=E<? value('source') ?>,"
+                      "       script_source=<? value('source') ?>,"
                       "       script_notes=<? value('notes') ?> "
                       " WHERE (script_id=<? value('id') ?>) "
                       "RETURNING script_id AS id; ");
@@ -113,7 +113,7 @@ int LoadAppScript::writeToDB(const QByteArray &pdata, const QString pkgname, QSt
                       "    script_source, script_notes"
                       ") VALUES (DEFAULT, <? value('name') ?>, "
                       "    <? value('grade') ?>,  <? value('enabled') ?>,"
-                      "    E<? value('source') ?>,"
+                      "    <? value('source') ?>,"
                       "    <? value('notes') ?>) "
                       "RETURNING script_id AS id;");
 

@@ -112,9 +112,9 @@ int Script::writeToDB(const QByteArray &pdata, const QString annotation, Paramet
     return -1;
   }
 
+  const char *data = pdata.data();
   XSqlQuery create;
-  create.exec(QString(pdata));
-  
+  create.exec(QString::fromLocal8Bit(data));
   if (create.lastError().type() != QSqlError::NoError)
   {
     errMsg = _sqlerrtxt.arg(filename())

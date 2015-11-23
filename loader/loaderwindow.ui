@@ -231,7 +231,7 @@ to be bound by its terms.</comment>
  <connections>
   <connection>
    <sender>fileNewAction</sender>
-   <signal>activated()</signal>
+   <signal>triggered()</signal>
    <receiver>LoaderWindow</receiver>
    <slot>fileNew()</slot>
    <hints>
@@ -247,7 +247,7 @@ to be bound by its terms.</comment>
   </connection>
   <connection>
    <sender>fileOpenAction</sender>
-   <signal>activated()</signal>
+   <signal>triggered()</signal>
    <receiver>LoaderWindow</receiver>
    <slot>fileOpen()</slot>
    <hints>
@@ -263,7 +263,7 @@ to be bound by its terms.</comment>
   </connection>
   <connection>
    <sender>fileExitAction</sender>
-   <signal>activated()</signal>
+   <signal>triggered()</signal>
    <receiver>LoaderWindow</receiver>
    <slot>fileExit()</slot>
    <hints>
@@ -279,7 +279,7 @@ to be bound by its terms.</comment>
   </connection>
   <connection>
    <sender>helpContentsAction</sender>
-   <signal>activated()</signal>
+   <signal>triggered()</signal>
    <receiver>LoaderWindow</receiver>
    <slot>helpContents()</slot>
    <hints>
@@ -295,7 +295,7 @@ to be bound by its terms.</comment>
   </connection>
   <connection>
    <sender>helpAboutAction</sender>
-   <signal>activated()</signal>
+   <signal>triggered()</signal>
    <receiver>LoaderWindow</receiver>
    <slot>helpAbout()</slot>
    <hints>
