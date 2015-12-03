@@ -150,7 +150,7 @@ Package::Package(const QDomElement & elem, QStringList &msgList,
       _finalscripts.append(new FinalScript(elemThis, msgList, fatalList));
     else if(elemThis.tagName() == "initscript")
       _initscripts.append(new InitScript(elemThis, msgList, fatalList));
-    else if(elemThis.tagName() == "comment" || elemThis.tagName() == "")
+    else if(elemThis.tagName() == "comment" || nList.item(n).isComment())
       // Package <comment> tag or XML comment - Do nothing
       bool comments = true;  
     else if (! reportedErrorTags.contains(elemThis.tagName()))
