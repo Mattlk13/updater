@@ -26,14 +26,12 @@ CreateView::CreateView(const QString &filename, const QString &name,
   : CreateDBObj("createview", filename, name, comment, schema, onError)
 {
   _pkgitemtype = "V";
-  _relkind     = "v";
 }
 
 CreateView::CreateView(const QDomElement &elem, QStringList &msg, QList<bool> &fatal)
   : CreateDBObj(elem, msg, fatal)
 {
   _pkgitemtype = "V";
-  _relkind     = "v";
 
   if (elem.nodeName() != "createview")
   {
@@ -53,10 +51,9 @@ int CreateView::writeToDB(const QByteArray &pdata, const QString pkgname,
   _oidMql = new MetaSQLQuery("SELECT pg_class.oid AS oid "
                              "FROM pg_class, pg_namespace "
                              "WHERE ((relname=<? value('name') ?>)"
-                             "  AND  (relkind=<? value('relkind') ?>)"
+                             "  AND  (relkind IN ('v', 'm'))"
                              "  AND  (relnamespace=pg_namespace.oid)"
                              "  AND  (nspname=<? value('schema') ?>));");
-  params.append("relkind", _relkind);
 
   int returnVal = CreateDBObj::writeToDB(pdata, pkgname, params, errMsg);
 

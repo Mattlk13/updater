@@ -24,8 +24,6 @@ class CreateView : public CreateDBObj
 
     virtual int writeToDB(const QByteArray &pdata, const QString pkgname, ParameterList &params, QString &errMsg);
 
-  protected:
-    QString _relkind;
 };
 
 #endif
