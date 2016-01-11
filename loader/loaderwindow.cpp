@@ -1051,7 +1051,7 @@ int LoaderWindowPrivate::disableTriggers()
     {
       schema = i->schema();
       if (schema.isEmpty() && ! _p->_package->system() && ! triggers.contains("pkg" + key))
-        triggers.append("pkgpriv");
+        triggers.append("pkg" + key);
       else if (! schema.isEmpty() && "public" != schema && ! triggers.contains(schema + ".pkg" + key))
         triggers.append(schema + ".pkg" + key);
     }
