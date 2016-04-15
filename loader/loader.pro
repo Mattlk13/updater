@@ -11,7 +11,7 @@
 include( ../global.pri )
 
 TEMPLATE = app
-CONFIG += qt warn_on
+CONFIG += qt warn_on c++11
 QT     += xml sql xmlpatterns
 isEqual(QT_MAJOR_VERSION, 5) {
   QT += widgets
@@ -26,7 +26,7 @@ UI_DIR      = tmp
 
 QMAKE_LIBDIR += $${UPDATER_LIBDIR} $${OPENRPT_LIBDIR} $${XTUPLE_LIBDIR}
 LIBS += -lxtuplecommon -lupdatercommon -lopenrptcommon -lrenderer -lMetaSQL
-macx: LIBS += -lz
+LIBS += -lz
 
 win32-msvc* {
   PRE_TARGETDEPS += $${UPDATER_LIBDIR}/updatercommon.lib          \
@@ -45,6 +45,7 @@ win32-msvc* {
 DESTDIR = ../bin
 
 RC_FILE = rcloader.rc
+
 macx {
   RC_FILE = ../images/updater.icns
   QMAKE_INFO_PLIST = Info.plist

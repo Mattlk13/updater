@@ -22,6 +22,7 @@
 #include <QSqlError>
 #include <QTimerEvent>
 #include <QDateTime>
+#include <QDesktopServices>
 
 #include <dbtools.h>
 #include <cmdlinemessagehandler.h>
@@ -445,48 +446,10 @@ void LoaderWindow::helpContents()
 // TODO: put in a generic place and use both from there or use WebKit instead
 void LoaderWindow::launchBrowser(QWidget * w, const QString & url)
 {
-#if defined(Q_OS_WIN32)
-  // Windows - let the OS do the work
-  QT_WA( {
-      ShellExecute(w->winId(), 0, (TCHAR*)url.utf16(), 0, 0, SW_SHOWNORMAL );
-    } , {
-      ShellExecuteA( w->winId(), 0, url.toLocal8Bit(), 0, 0, SW_SHOWNORMAL );
-    } );
-#else
-  QString b(getenv("BROWSER"));
-  QStringList browser;
-  if (! b.isEmpty())
-    browser = b.split(':');
-
-#if defined(Q_OS_MACX)
-  browser.append("/usr/bin/open");
-#else
-  // append this on linux just as a good guess
-  browser.append("/usr/bin/firefox");
-  browser.append("/usr/bin/mozilla");
-#endif
-  foreach (QString app, browser) {
-    if(app.contains("%s")) {
-      app.replace("%s", url);
-    } else {
-      app += " " + url;
-    }
-    app.replace("%%", "%");
-    QProcess *proc = new QProcess(w);
-    QStringList args = app.split(QRegExp(" +"));
-    QString appname = args.takeFirst();
-
-    proc->start(appname, args);
-    if (proc->waitForStarted() &&
-        proc->waitForFinished())
-      return;
-
-    _p->handler->message(QtFatalMsg,
-                         tr("<p>Before you can run a web browser you must "
-                            "set the environment variable BROWSER to point "
-                            "to the browser executable.") );
-  }
-#endif  // if not windows
+  if(!QDesktopServices::openUrl(url))
+    {
+      _p->handler->message(QtFatalMsg, tr("<p>Unable to open browser") );
+    } 
 }
 
 void LoaderWindow::helpAbout()
