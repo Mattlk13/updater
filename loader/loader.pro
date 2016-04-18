@@ -11,7 +11,7 @@
 include( ../global.pri )
 
 TEMPLATE = app
-CONFIG += qt warn_on c++11
+CONFIG += qt warn_on
 QT     += xml sql xmlpatterns
 isEqual(QT_MAJOR_VERSION, 5) {
   QT += widgets
