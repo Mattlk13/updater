@@ -11,7 +11,7 @@
 include( ../global.pri )
 
 TEMPLATE = app
-CONFIG += qt warn_on
+CONFIG += qt warn_on c++11
 QT     += xml sql xmlpatterns
 isEqual(QT_MAJOR_VERSION, 5) {
   QT += widgets
@@ -49,6 +49,7 @@ RC_FILE = rcloader.rc
 macx {
   RC_FILE = ../images/updater.icns
   QMAKE_INFO_PLIST = Info.plist
+  CONFIG -= c++11
 }
 
 FORMS   += loaderwindow.ui
