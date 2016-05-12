@@ -50,10 +50,15 @@ protected:
     Package * _package;
     TarFile * _files;
 
+    QString _filename;
+    QString prePkgVer;
+    QString preDbVer;
+
     virtual int  applySql(Script *, const QByteArray);
     virtual int  applyLoadable(Loadable *, const QByteArray);
     virtual void launchBrowser(QWidget *w, const QString &url);
     virtual void timerEvent( QTimerEvent * e );
+    virtual void logUpdate(QDateTime startTime, QDateTime endTime);
 
     static QString _rollbackMsg;
 
