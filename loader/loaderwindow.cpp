@@ -1153,21 +1153,6 @@ void LoaderWindow::logUpdate(QDateTime startTime, QDateTime endTime)
   if (_q.first())
     if(_q.value(0).toBool())
     {
-      QString username = NULL;
-      _q.exec( "SELECT CURRENT_USER AS username;" );
-      if (_q.first())
-      {
-        username = _q.value("username").toString();
-      }
-
-      QDateTime start = startTime;
-      QDateTime end = endTime;
-      QString file = _filename;
-      QString name = NULL;
-      QString version = NULL;
-
-      name = _package->name();
-
       QString osUser = NULL;
 
       #if not defined(Q_OS_WIN)
@@ -1180,29 +1165,9 @@ void LoaderWindow::logUpdate(QDateTime startTime, QDateTime endTime)
         osUser = QString::fromAscii((char*)osUsertmp);
       #endif
 
-      QString server;
-      QString protocol;
-      QString database;
-      QString port;
-      parseDatabaseURL(_databaseURL, protocol, server, database, port);
-
-      QString os = NULL;
-      #if defined(Q_OS_WIN)
-        os = QString::fromStdString("Windows");
-      #endif
-      #if defined(Q_OS_MAC)
-        os = QString::fromStdString("Mac");
-      #endif
-      #if defined(Q_OS_LINUX)
-        os = QString::fromStdString("Linux");
-      #endif
-
-      XVersion updaterversion(Updater::version);
-      QString updater = updaterversion.toString();
-
       QString postPkgVer = NULL;
       QString postDbVer = NULL;
-      if (name.isNull())
+      if (_package->name().isNull())
       {
         postDbVer = _package->version().toString();
       }
@@ -1217,19 +1182,18 @@ void LoaderWindow::logUpdate(QDateTime startTime, QDateTime endTime)
           " updaterhist_file, updaterhist_pkgname, updaterhist_osuser, updaterhist_hostname,"
           " updaterhist_os, updaterhist_updaterver, updaterhist_prepkgver, updaterhist_postpkgver,"
           " updaterhist_predbver, updaterhist_postdbver) "
-          " VALUES (:user, :start, :end,"
+          " VALUES (geteffectivextuser(), :start, :end,"
           "      :file, :pkgname, :osuser, :hostname,"
           "      :os, :updater, :prepkgver, :postpkgver,"
           "      :predbver, :postdbver);" );
-      _q.bindValue(":user", username);
-      _q.bindValue(":start", start);
-      _q.bindValue(":end", end);
-      _q.bindValue(":file", file);
-      _q.bindValue(":pkgname", name);
+      _q.bindValue(":start", startTime);
+      _q.bindValue(":end", endTime);
+      _q.bindValue(":file", _filename);
+      _q.bindValue(":pkgname", _package->name());
       _q.bindValue(":osuser", osUser);
-      _q.bindValue(":hostname", server);
-      _q.bindValue(":os", os);
-      _q.bindValue(":updater", updater);
+      _q.bindValue(":hostname", QSqlDatabase::database().hostName());
+      _q.bindValue(":os", QApplication::platformName());
+      _q.bindValue(":updater", XVersion(Updater::version).toString());
       _q.bindValue(":prepkgver", prePkgVer);
       _q.bindValue(":postpkgver", postPkgVer);
       _q.bindValue(":predbver", preDbVer);
