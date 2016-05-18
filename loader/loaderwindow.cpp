@@ -63,6 +63,10 @@
 #include <stdlib.h>
 #endif
 #endif
+#if not defined(Q_OS_WIN)
+#include <unistd.h>
+#include <pwd.h>
+#endif
 
 extern QString _databaseURL;
 
@@ -199,7 +203,7 @@ void LoaderWindow::fileNew()
 bool LoaderWindow::openFile(QString pfilename)
 {
   fileNew();
-  
+
   QFileInfo fi(pfilename);
   if (fi.filePath().isEmpty())
     return false;
@@ -428,6 +432,9 @@ void LoaderWindow::fileOpen()
     return;
     
   QFileInfo fi(filename);
+
+  _filename = fi.fileName();
+
   settings.setValue("LastDirectory", fi.path());
 }
 
@@ -491,6 +498,23 @@ bool LoaderWindow::sStart()
   _start->setEnabled(false);
 
   QDateTime startTime = QDateTime::currentDateTime();
+  QDateTime endTime = QDateTime::currentDateTime();
+
+  XSqlQuery _q;
+  _q.prepare("SELECT pkghead_version FROM pkghead WHERE pkghead_name=:name;" );
+  _q.bindValue(":name", _package->name());
+  _q.exec();
+  if (_q.first())
+  {
+    prePkgVer = _q.value("pkghead_version").toString();
+  }
+
+  _q.exec("SELECT metric_value FROM metric WHERE metric_name='ServerVersion';" );
+  if (_q.first())
+  {
+    preDbVer = _q.value("metric_value").toString();
+  }
+
   _p->handler->message(QtWarningMsg,
       tr("<p>Starting Update at %1</p>").arg(startTime.toString()));
 
@@ -740,7 +764,7 @@ bool LoaderWindow::sStart()
     _p->handler->message(QtWarningMsg,
         tr("<h2>The Update is now complete but errors were ignored!</h2>"));
 
-    QDateTime endTime = QDateTime::currentDateTime();
+    endTime = QDateTime::currentDateTime();
     _p->handler->message(QtWarningMsg,
         tr("<p>Completed Update at %1</p>").arg(endTime.toString()));
     _p->handler->message(QtWarningMsg, _p->elapsedTime(startTime, endTime));
@@ -758,7 +782,7 @@ bool LoaderWindow::sStart()
     qry.exec("commit;");
     _p->handler->message(QtWarningMsg, tr("<h2>The Update is now complete!</h2>"));
 
-    QDateTime endTime = QDateTime::currentDateTime();
+    endTime = QDateTime::currentDateTime();
     _p->handler->message(QtWarningMsg,
         tr("<p>Completed Update at %1</p>").arg(endTime.toString()));
     _p->handler->message(QtWarningMsg, _p->elapsedTime(startTime, endTime));
@@ -767,6 +791,8 @@ bool LoaderWindow::sStart()
     if (_p->useCmdline)
     {
       fileExit();       // need this so the app will quit its event loop
+      if (returnValue)
+        logUpdate(startTime, endTime);
       return returnValue;
     }
   }
@@ -786,6 +812,8 @@ bool LoaderWindow::sStart()
 
   }
 
+  if (returnValue)
+    logUpdate(startTime, endTime);
   return returnValue;
 }
 
@@ -1118,3 +1146,58 @@ void LoaderWindow::setWindowTitle()
     QMainWindow::setWindowTitle(tr("%1 %2").arg(Updater::name).arg(Updater::version));
 }
 
+void LoaderWindow::logUpdate(QDateTime startTime, QDateTime endTime)
+{
+  XSqlQuery _q;
+  _q.exec("SELECT EXISTS(SELECT relname FROM pg_class JOIN pg_namespace ON relnamespace=pg_namespace.oid WHERE relname='updaterhist' AND pg_namespace.nspname='public');" );
+  if (_q.first())
+    if(_q.value(0).toBool())
+    {
+      QString osUser = NULL;
+
+      #if not defined(Q_OS_WIN)
+        osUser = getpwuid(getuid())->pw_name;
+      #endif
+      #if defined(Q_OS_WIN)
+        char osUsertmp[UNLEN + 1];
+        int size = UNLEN + 1;
+        GetUserName((char*)osUsertmp, &size);
+        osUser = QString::fromAscii((char*)osUsertmp);
+      #endif
+
+      QString postPkgVer = NULL;
+      QString postDbVer = NULL;
+      if (_package->name().isNull())
+      {
+        postDbVer = _package->version().toString();
+      }
+      else
+      {
+        postPkgVer = _package->version().toString();
+        postDbVer = preDbVer;
+      }
+
+      _q.prepare( "INSERT INTO updaterhist "
+          "( updaterhist_user, updaterhist_start, updaterhist_end,"
+          " updaterhist_file, updaterhist_pkgname, updaterhist_osuser, updaterhist_hostname,"
+          " updaterhist_os, updaterhist_updaterver, updaterhist_prepkgver, updaterhist_postpkgver,"
+          " updaterhist_predbver, updaterhist_postdbver) "
+          " VALUES (geteffectivextuser(), :start, :end,"
+          "      :file, :pkgname, :osuser, :hostname,"
+          "      :os, :updater, :prepkgver, :postpkgver,"
+          "      :predbver, :postdbver);" );
+      _q.bindValue(":start", startTime);
+      _q.bindValue(":end", endTime);
+      _q.bindValue(":file", _filename);
+      _q.bindValue(":pkgname", _package->name());
+      _q.bindValue(":osuser", osUser);
+      _q.bindValue(":hostname", QSqlDatabase::database().hostName());
+      _q.bindValue(":os", QApplication::platformName());
+      _q.bindValue(":updater", XVersion(Updater::version).toString());
+      _q.bindValue(":prepkgver", prePkgVer);
+      _q.bindValue(":postpkgver", postPkgVer);
+      _q.bindValue(":predbver", preDbVer);
+      _q.bindValue(":postdbver", postDbVer);
+      _q.exec();
+    }
+}
