@@ -57,6 +57,7 @@
 #if defined(Q_OS_WIN32)
 #define NOCRYPT
 #include <windows.h>
+#include <lmcons.h>
 #undef LoadImage
 #else
 #if defined(Q_OS_MACX)
@@ -1162,7 +1163,23 @@ void LoaderWindow::logUpdate(QDateTime startTime, QDateTime endTime)
         char osUsertmp[UNLEN + 1];
         int size = UNLEN + 1;
         GetUserName((char*)osUsertmp, &size);
-        osUser = QString::fromAscii((char*)osUsertmp);
+        osUser = QString::fromLatin1((char*)osUsertmp);
+      #endif
+
+      QString os = NULL;
+      #if QT_VERSION < 0x050000
+        #if defined(Q_OS_WIN)
+          os = QString::fromStdString("Windows");
+        #endif
+        #if defined(Q_OS_MAC)
+          os = QString::fromStdString("Mac");
+        #endif
+        #if defined(Q_OS_LINUX)
+          os = QString::fromStdString("Linux");
+        #endif
+      #endif
+      #if QT_VERSION >= 0x050000
+        os = QApplication::platformName()
       #endif
 
       QString postPkgVer = NULL;
@@ -1192,7 +1209,7 @@ void LoaderWindow::logUpdate(QDateTime startTime, QDateTime endTime)
       _q.bindValue(":pkgname", _package->name());
       _q.bindValue(":osuser", osUser);
       _q.bindValue(":hostname", QSqlDatabase::database().hostName());
-      _q.bindValue(":os", QApplication::platformName());
+      _q.bindValue(":os", os);
       _q.bindValue(":updater", XVersion(Updater::version).toString());
       _q.bindValue(":prepkgver", prePkgVer);
       _q.bindValue(":postpkgver", postPkgVer);
