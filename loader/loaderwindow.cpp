@@ -1160,9 +1160,9 @@ void LoaderWindow::logUpdate(QDateTime startTime, QDateTime endTime)
         osUser = getpwuid(getuid())->pw_name;
       #endif
       #if defined(Q_OS_WIN)
-        char osUsertmp[UNLEN + 1];
-        int size = UNLEN + 1;
-        GetUserName((char*)osUsertmp, &size);
+        TCHAR osUsertmp[UNLEN + 1];
+        DWORD size = UNLEN + 1;
+        GetUserName((TCHAR*)osUsertmp, &size);
         osUser = QString::fromLatin1((char*)osUsertmp);
       #endif
 
@@ -1179,7 +1179,7 @@ void LoaderWindow::logUpdate(QDateTime startTime, QDateTime endTime)
         #endif
       #endif
       #if QT_VERSION >= 0x050000
-        os = QApplication::platformName()
+        os = QApplication::platformName();
       #endif
 
       QString postPkgVer = NULL;
