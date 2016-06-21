@@ -52,7 +52,7 @@ int CreateTable::writeToDB(const QByteArray &pdata, const QString pkgname,
 
   _oidMql = new MetaSQLQuery("SELECT pg_class.oid AS oid "
                              "FROM pg_class, pg_namespace "
-                             "WHERE ((relname=<? value('name') ?>)"
+                             "WHERE ((relname=LOWER(<? value('name') ?>))"
                              "  AND  (relkind=<? value('relkind') ?>)"
                              "  AND  (relnamespace=pg_namespace.oid)"
                              "  AND  (nspname=<? value('schema') ?>));");
