@@ -19,7 +19,7 @@
 
 #define DEBUG false
 
-CreateFunction::CreateFunction(const QString &filename, 
+CreateFunction::CreateFunction(const QString &filename,
                                const QString &name, const QString &comment,
                                const QString &schema, const OnError onError)
   : CreateDBObj("createfunction", filename, name, comment, schema, onError)
@@ -61,7 +61,7 @@ int CreateFunction::writeToDB(const QByteArray &pdata, const QString pkgname,
   oidq.prepare("SELECT pg_proc.oid, oidvectortypes(proargtypes) "
                "FROM pg_proc, pg_namespace "
                "WHERE ((pg_namespace.oid=pronamespace)"
-               "  AND  (proname=:name)"
+               "  AND  (proname=LOWER(:name))"
                "  AND  (nspname=:schema));");
   oidq.bindValue(":name",   _name);
   oidq.bindValue(":schema", destschema);
