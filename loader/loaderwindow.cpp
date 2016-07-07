@@ -428,7 +428,7 @@ void LoaderWindow::fileOpen()
 
   QString filename = QFileDialog::getOpenFileName(this,
                                                   tr("Open Package"), path,
-                                                  tr("Package Files (*.gz);;All Files (*.*)"));
+                                                  tr("Package Files (*.gz *.tar);;All Files (*.*)"));
 
   if (! openFile(filename))
     return;
