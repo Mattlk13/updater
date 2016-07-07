@@ -1,7 +1,7 @@
 /*
  * This file is part of the xTuple ERP: PostBooks Edition, a free and
  * open source Enterprise Resource Planning software suite,
- * Copyright (c) 1999-2015 by OpenMFG LLC, d/b/a xTuple.
+ * Copyright (c) 1999-2016 by OpenMFG LLC, d/b/a xTuple.
  * It is licensed to you under the Common Public Attribution License
  * version 1.0, the full text of which (including xTuple-specific Exhibits)
  * is available at www.xtuple.com/CPAL.  By using this software, you agree
@@ -20,7 +20,7 @@
 #include <parameter.h>
 #include <xsqlquery.h>
 
-#include "data.h"
+#include "updaterdata.h"
 #include "loaderwindow.h"
 #include "xabstractmessagehandler.h"
 
@@ -44,7 +44,7 @@ int main(int argc, char* argv[])
 
   QApplication app(argc, argv);
   app.addLibraryPath(".");
-#ifndef Q_WS_MACX
+#ifndef Q_OS_MACX
   app.setWindowIcon(QIcon(":/images/updater-32x32.png"));
 #endif
 
@@ -168,12 +168,11 @@ int main(int argc, char* argv[])
 
     if (newdlg.exec() == QDialog::Rejected)
       return 2;
-    else
-    {
-      _databaseURL = newdlg._databaseURL;
-      username     = newdlg._user;
-      Updater::loggedIn = true;
-    }
+
+    _databaseURL = newdlg._databaseURL;
+    username     = newdlg._user;
+    Updater::loggedIn = true;
+    mainwin->setWindowTitle();
 
     QSqlQuery set("SET standard_conforming_strings TO true;");
     if (set.lastError().type() != QSqlError::NoError)

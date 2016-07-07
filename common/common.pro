@@ -24,7 +24,7 @@ OBJECTS_DIR = tmp
 MOC_DIR = tmp
 UI_SOURCES_DIR = tmp
 
-HEADERS = data.h \
+HEADERS = updaterdata.h                 \
           package.h \
           createdbobj.h \
           createfunction.h \
@@ -49,7 +49,7 @@ HEADERS = data.h \
           guimessagehandler.h          \
           xversion.h
 
-SOURCES = data.cpp \
+SOURCES = updaterdata.cpp              \
           package.cpp \
           createdbobj.cpp \
           createfunction.cpp \
