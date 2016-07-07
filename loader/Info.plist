@@ -7,7 +7,7 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
         <key>CFBundleGetInfoString</key>
-        <string>2.3.0Beta</string>
+        <string>2.4.0Beta</string>
 	<key>CFBundleSignature</key>
 	<string>xtuple</string>
 	<key>CFBundleExecutable</key>
