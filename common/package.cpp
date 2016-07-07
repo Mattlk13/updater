@@ -1,7 +1,7 @@
 /*
  * This file is part of the xTuple ERP: PostBooks Edition, a free and
  * open source Enterprise Resource Planning software suite,
- * Copyright (c) 1999-2015 by OpenMFG LLC, d/b/a xTuple.
+ * Copyright (c) 1999-2016 by OpenMFG LLC, d/b/a xTuple.
  * It is licensed to you under the Common Public Attribution License
  * version 1.0, the full text of which (including xTuple-specific Exhibits)
  * is available at www.xtuple.com/CPAL.  By using this software, you agree
@@ -20,7 +20,7 @@
 #include "createtable.h"
 #include "createtrigger.h"
 #include "createview.h"
-#include "data.h"
+#include "updaterdata.h"
 #include "loadcmd.h"
 #include "loadappscript.h"
 #include "loadappui.h"
@@ -151,8 +151,7 @@ Package::Package(const QDomElement & elem, QStringList &msgList,
     else if(elemThis.tagName() == "initscript")
       _initscripts.append(new InitScript(elemThis, msgList, fatalList));
     else if(elemThis.tagName() == "comment" || nList.item(n).isComment())
-      // Package <comment> tag or XML comment - Do nothing
-      bool comments = true;  
+      ; // ignore <comment> tags and XML comments
     else if (! reportedErrorTags.contains(elemThis.tagName()))
     {
       if (handler)

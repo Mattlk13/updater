@@ -1,7 +1,7 @@
 /*
  * This file is part of the xTuple ERP: PostBooks Edition, a free and
  * open source Enterprise Resource Planning software suite,
- * Copyright (c) 1999-2015 by OpenMFG LLC, d/b/a xTuple.
+ * Copyright (c) 1999-2016 by OpenMFG LLC, d/b/a xTuple.
  * It is licensed to you under the Common Public Attribution License
  * version 1.0, the full text of which (including xTuple-specific Exhibits)
  * is available at www.xtuple.com/CPAL.  By using this software, you agree
@@ -49,6 +49,7 @@
 #include <xsqlquery.h>
 
 #include "data.h"
+#include "updaterdata.h"
 
 #include "xsqlquery.h"
 
@@ -60,7 +61,7 @@
 #include <lmcons.h>
 #undef LoadImage
 #else
-#if defined(Q_OS_MACX)
+#if defined(Q_OS_MAC)
 #include <stdlib.h>
 #endif
 #endif
@@ -454,6 +455,7 @@ void LoaderWindow::helpContents()
 // TODO: put in a generic place and use both from there or use WebKit instead
 void LoaderWindow::launchBrowser(QWidget * w, const QString & url)
 {
+  Q_UNUSED(w);
   if(!QDesktopServices::openUrl(url))
     {
       _p->handler->message(QtFatalMsg, tr("<p>Unable to open browser") );
@@ -463,11 +465,17 @@ void LoaderWindow::launchBrowser(QWidget * w, const QString & url)
 void LoaderWindow::helpAbout()
 {
   QMessageBox::about(this, Updater::name,
-    tr("<p>Apply update packages to your xTuple ERP database."
-       "<p>Version %1</p>"
-       "<p>%2</p>"
-       "All Rights Reserved")
-    .arg(Updater::version).arg(Updater::copyright));
+                     tr("<p>%1<br/>Version %2 %3<br/>%4</p>"
+                        "<p>Apply update packages to your xTuple ERP database.</p>"
+                        "<p>Built with:</p><ul>"
+                        "<li>OpenRPT %5 %6</li>"
+                        "<li>Qt %7</li>"
+                        "</ul>"
+                        "All Rights Reserved")
+                        .arg(Updater::name,    Updater::version)
+                        .arg(Updater::build,   Updater::copyright)
+                        .arg(OpenRPT::version, OpenRPT::build)
+                        .arg(QT_VERSION_STR));
 }
 
 void LoaderWindow::timerEvent( QTimerEvent * e )
@@ -1116,35 +1124,17 @@ int LoaderWindowPrivate::enableTriggers()
 
 void LoaderWindow::setWindowTitle()
 {
-  QString name;
+  QString name = tr("Unnamed Database");
+  XSqlQuery q("SELECT fetchMetricText('DatabaseName') AS metric_value;");
+  if (q.first())
+    name = q.value("metric_value").toString();
 
-  XSqlQuery _q;
-  _q.exec( "SELECT metric_value, CURRENT_USER AS username "
-           "FROM metric "
-           "WHERE (metric_name='DatabaseName')" );
-  if (_q.first())
-  {
-    if (_q.value("metric_value").toString().isEmpty())
-      name = tr("Unnamed Database");
-    else
-      name = _q.value("metric_value").toString();
-
-    QString server;
-    QString protocol;
-    QString database;
-    QString port;
-    parseDatabaseURL(_databaseURL, protocol, server, database, port);
-
-    QMainWindow::setWindowTitle( tr("%1 %2 - %3 on %4/%5 AS %6")
-                               .arg(Updater::name)
-                               .arg(Updater::version)
-                               .arg(name)
-                               .arg(server)
-                               .arg(database)
-                               .arg(_q.value("username").toString()) );
-  }
-  else
-    QMainWindow::setWindowTitle(tr("%1 %2").arg(Updater::name).arg(Updater::version));
+  QSqlDatabase db = QSqlDatabase::database();
+  QMainWindow::setWindowTitle(tr("%1 %2 - %3 (%4) on %5:%6 AS %7")
+                                 .arg(Updater::name, Updater::version)
+                                 .arg(name, db.databaseName(), db.hostName())
+                                 .arg(db.port())
+                                 .arg(db.userName()));
 }
 
 void LoaderWindow::logUpdate(QDateTime startTime, QDateTime endTime)
