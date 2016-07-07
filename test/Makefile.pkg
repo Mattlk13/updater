@@ -94,10 +94,3 @@ unknownelem.gz: unknownelem			\
 unsupportedprereq.gz: unsupportedprereq			\
                       unsupportedprereq/contents.xml
 	tar czf $@ --exclude .svn $<
-
-testxversion: testxversion.cpp ../lib/libupdatercommon.a
-	g++ -o testxversion testxversion.cpp \
-	                      -g -pipe -Wall \
-	                      -DQT_NO_DEBUG -DQT_CORE_LIB -DQT_SHARED \
-	                      -I../common -I$(QTDIR)/include/QtCore -I$(QTDIR)/include \
-	                      -L../lib    -L$(QTDIR)/lib -lupdatercommon -lQtCore
