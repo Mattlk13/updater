@@ -44,7 +44,7 @@ int main(int argc, char* argv[])
 
   QApplication app(argc, argv);
   app.addLibraryPath(".");
-#ifndef Q_OS_MACX
+#ifndef Q_OS_MAC
   app.setWindowIcon(QIcon(":/images/updater-32x32.png"));
 #endif
 

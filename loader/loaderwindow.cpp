@@ -61,7 +61,7 @@
 #include <lmcons.h>
 #undef LoadImage
 #else
-#if defined(Q_OS_MACX)
+#if defined(Q_OS_MAC)
 #include <stdlib.h>
 #endif
 #endif
