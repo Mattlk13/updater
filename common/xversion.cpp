@@ -52,10 +52,10 @@ void XVersion::setVersion(const QString &pString)
 {
   QStringList suffixes;
   suffixes << "wip" << "alpha" << "beta" << "rc";
-  QRegExp relregex("^(\\d+)\\.(\\d+)(\\.\\d+)?(?:(" +
-                   suffixes.join("|") +
-                   ")(\\d*)?)?$");
 
+  // regexp copied from public._normalizeVersion, then added initial 'v?"
+  QRegExp relregex("^v?([0-9]+)\\.([0-9]+)((\\.)([0-9]+))?-?(([a-z]+)\\.?(([0-9]*)\\.?([a-z]?)?)?)?");
+  
   if (relregex.indexIn(pString.toLower()) == -1)
     return;
 
@@ -67,15 +67,15 @@ void XVersion::setVersion(const QString &pString)
     return;
   _minor = relregex.cap(2).toInt();
 
-  if (! relregex.cap(3).isEmpty())
-    _point = relregex.cap(3).mid(1).toInt();
+  if (! relregex.cap(5).isEmpty())
+    _point = relregex.cap(5).toInt();
 
-  if (relregex.cap(4).isEmpty())
+  if (relregex.cap(7).isEmpty())
   {
     _stage    = FINAL;
     _substage = 0;
   }
-  else switch (suffixes.indexOf(relregex.cap(4)))
+  else switch (suffixes.indexOf(relregex.cap(7)))
   {
     case 0:  _stage = WIP;     _substage = 0; break;
     case 1:  _stage = ALPHA;   _substage = 0; break;
@@ -84,8 +84,8 @@ void XVersion::setVersion(const QString &pString)
     default: _stage = UNKNOWN;                break;
   }
 
-  if (! relregex.cap(5).isEmpty())
-    _substage = relregex.cap(5).toInt();
+  if (! relregex.cap(9).isEmpty())
+    _substage = relregex.cap(9).toInt();
 }
 
 int XVersion::majorNumber(bool &ok) const

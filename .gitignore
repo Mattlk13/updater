@@ -1,7 +1,9 @@
 .*swp
+.qmake.stash
 /bin
 /lib
 Makefile
 common/ui_licensewindow.h
 loader/qrc_loader.cpp
 tmp/
+test/testxversion.app
