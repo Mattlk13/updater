@@ -38,7 +38,7 @@ int LoadQm::writeToDB(const QByteArray &pdata, const QString pkgname, QString &e
 	QString lang = "";
 
 
-	QStringList directory_chop = filename.split("/");
+	QStringList directory_chop = _filename.split("/");
 	QString formatted_filename = directory_chop[directory_chop.size() - 1];
 
 	QStringList file_parts = formatted_filename.split(".");
