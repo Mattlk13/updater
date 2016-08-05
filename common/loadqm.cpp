@@ -9,7 +9,7 @@
 
 
 
-LoadQm::LoadQm(const QString &name, const int grade, const bool system, const QString &comment, const QString filename)
+LoadQm::LoadQm(const QString &name, const int grade, const bool system, const QString &comment, const QString &filename)
 	: Loadable("loadqm", name, grade, system, comment, filename)
 {
 	_pkgitemtype = "Q";
@@ -30,17 +30,8 @@ LoadQm::LoadQm(const QDomElement & elem, const bool system, QStringList &msg, QL
 
 int LoadQm::writeToDB(const QByteArray &pdata, const QString pkgname, QString &errMsg)
 {
-
-	//Precaution against null _filename. Exists in loadReport.cpp as well.
-	if (_filename.isEmpty())
-	{
-		errMsg = TR("<font color=orange>The qm file %1 does not have"
-			" a filename defined</font>")
-			.arg(_filename);
-		return -1;
-	}
-
-
+	
+	char *data = pdata.data();
 
 	QString extension_name = "";
 	QString country = "";
@@ -72,7 +63,7 @@ int LoadQm::writeToDB(const QByteArray &pdata, const QString pkgname, QString &e
 	params.append("extension_nm", extension_name);
 	params.append("lang", lang);
 	params.append("country", country);
-	params.append("qm_data", pdata);
+	params.append("qm_data", data);
 
 
 	//let Loadable::writeToDB handle the execution of the _insertMql query
