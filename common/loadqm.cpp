@@ -31,7 +31,7 @@ LoadQm::LoadQm(const QDomElement & elem, const bool system, QStringList &msg, QL
 int LoadQm::writeToDB(const QByteArray &pdata, const QString pkgname, QString &errMsg)
 {
 	
-	char *data = pdata.data();
+	const char *data = pdata.data();
 
 	QString extension_name = "";
 	QString country = "";
