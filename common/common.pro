@@ -41,6 +41,7 @@ HEADERS = updaterdata.h                 \
           loadimage.h \
           loadmetasql.h \
           loadpriv.h \
+		  loadqm.h \
           loadreport.h \
           pkgschema.h \
           prerequisite.h \
@@ -66,6 +67,7 @@ SOURCES = updaterdata.cpp              \
           loadimage.cpp \
           loadmetasql.cpp \
           loadpriv.cpp \
+		  loadqm.cpp \
           loadreport.cpp \
           pkgschema.cpp \
           prerequisite.cpp \
