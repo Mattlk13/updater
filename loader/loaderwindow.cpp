@@ -368,7 +368,7 @@ bool LoaderWindow::openFile(QString pfilename)
   {
     foreach (Prerequisite *i, _package->_prerequisites)
     {
-      _p->handler->message(QtWarningMsg, tr("checking %1<br/>").arg(i->name()));
+      _p->handler->message(QtWarningMsg, tr("Prerequisite: %1<br/>").arg(i->name()));
       if (! i->met(errMsg, _p->handler))
       {
         allOk = false;

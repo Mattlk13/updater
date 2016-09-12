@@ -117,6 +117,25 @@ int LoadReport::writeToDB(const QByteArray &pdata, const QString pkgname, QStrin
         errMsg = _sqlerrtxt.arg(_filename).arg(err.driverText()).arg(err.databaseText());
         return -8;
       }
+
+      // unless there's a version of the report that is part of this pkg
+      select.prepare("SELECT report_grade "
+                     "FROM report r JOIN pg_class c ON (r.tableoid=c.oid)"
+                     "              JOIN pg_namespace n ON (relnamespace=n.oid) "
+                     "WHERE ((report_name=:name)"
+                     "  AND  (nspname=:pkgname));");
+      select.bindValue(":name",    _name);
+      select.bindValue(":pkgname", pkgname);
+      select.exec();
+
+      if (select.first())
+        _grade = select.value(0).toInt();
+      else if (next.lastError().type() != QSqlError::NoError)
+      {
+        QSqlError err = next.lastError();
+        errMsg = _sqlerrtxt.arg(_filename).arg(err.driverText()).arg(err.databaseText());
+        return -10;
+      }
     }
     else if (select.lastError().type() != QSqlError::NoError)
     {
