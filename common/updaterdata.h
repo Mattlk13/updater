@@ -22,7 +22,5 @@ class Updater {
     static QString  version;
 };
 
-extern int     _usrid;
-
 #endif
 
