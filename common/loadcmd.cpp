@@ -172,7 +172,7 @@ int LoadCmd::writeToDB(const QByteArray &pdata, const QString pkgname, QString &
   if (_schema.isEmpty()        &&   pkgname.isEmpty())
     ;   // leave it alone
   else if (_schema.isEmpty()   && ! pkgname.isEmpty())
-    prefix = "pkg";
+    prefix = pkgname + ".pkg";
   else if ("public" == _schema &&   pkgname.isEmpty())
     ;   // leave it alone
   else if ("public" == _schema && ! pkgname.isEmpty())
