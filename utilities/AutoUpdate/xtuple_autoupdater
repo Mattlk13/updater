@@ -1,6 +1,6 @@
 #!/bin/bash 
 #
-# xtuple_autoupdater: 1.1
+# xtuple_autoupdater: 1.2
 # Author: danderson@xtuple.com
 #
 # The script initiates installation of xTuple installer packages (.gz) across multiple systems.
@@ -21,8 +21,7 @@ usage()
     echo "       DatabaseList: hostname1:port/database1,hostname2:port/database2..." 
     echo "                    or the name of the file which contains hostname and database in separate lines (in the same location as the package files)"
     echo
-    echo "       PLEASE NOTE: The target xTuple systems must have the headlessUpdate metric installed and set to TRUE"
-    echo "       	      This script also assumes the admin user has the same password in all target databases"
+    echo "       PLEASE NOTE: This script also assumes the admin user has the same password in all target databases"
     echo
     echo "       The script assumes the packages will run in alphabetical order based on a directory listing. " 
     echo "       If dependencies are required in the order packages must be loaded the list the package names in a "
@@ -38,7 +37,7 @@ runupdater()
     echo -e "Updating System: ${DBURL} with package ${PACKAGEFILE}
 ==================================================================" >> xtuple_update.log
  
-    ${UPDATERLOCATION}/updater -databaseURL=${DBURL} -username=${USERNAME} -passwd=${PASSWORD} -autorun -file=${PACKAGEFILE} >> xtuple_update.log ;
+    ${UPDATERLOCATION}/updater -databaseURL=${DBURL} -username=${USERNAME} -passwd=${PASSWORD} -autorun -D -file=${PACKAGEFILE} >> xtuple_update.log ;
 }
 
 #=====================================Main Script========================================
@@ -49,7 +48,7 @@ DATABASELIST=
 DATABASEFILE=
 PACKAGELIST=": No packages found"
 ADMINUSER="admin"
-UPDATERLOCATION=/opt/updater-headless
+UPDATERLOCATION=/opt/updater/bin/
 LOCATION=`pwd`
 
 # Parse the command line arguments with '-'
