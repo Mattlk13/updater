@@ -106,73 +106,23 @@ int LoadMetasql::writeToDB(const QByteArray &pdata, const QString pkgname, QStri
            qPrintable(_name), qPrintable(_group), qPrintable(_comment),
            qPrintable(metasqlStr));
 
-  QString destschema = "public";
-  if (_schema.isEmpty()        &&   pkgname.isEmpty())
-    ;   // leave it alone
-  else if (_schema.isEmpty()   && ! pkgname.isEmpty())
-    destschema = pkgname;
-  else if ("public" == _schema)
-    ;   // leave it alone
-  else if (! _schema.isEmpty())
-    destschema = _schema;
+  _minMql = new MetaSQLQuery("SELECT MIN(metasql_grade) AS min "
+                   "FROM metasql "
+                   "WHERE (metasql_group=<? value('group') ?>) "
+                   "AND (metasql_name=<? value('name') ?>);");
 
-  XSqlQuery gradedsavepoint("SAVEPOINT savemetasql_graded;");
-  MetaSQLQuery upsertm("SELECT saveMetasql(<? value('group') ?>,"
-                       "       <? value('name') ?>,  <? value('notes') ?>,"
-                       "       <? value('query') ?>,"
-                       "       CAST(<? value('system') ?> AS BOOLEAN),"
-                       "       <? value('schema') ?>"
-                       "<? if not exists('skipgrade') ?>"
-                       "        , <? value('grade') ?>"
-                       "<? endif ?>"
-                       ") AS result;");
-  ParameterList upsertp;
-  upsertp.append("group", _group);
-  upsertp.append("name",  _name);
-  upsertp.append("notes", _comment);
-  upsertp.append("query", metasqlStr);
-  upsertp.append("system",_system);
-  upsertp.append("schema",destschema);
-  upsertp.append("grade", _grade);
+  _maxMql = new MetaSQLQuery("SELECT MAX(metasql_grade) AS max "
+                   "FROM metasql "
+                   "WHERE (metasql_group=<? value('group') ?>) "
+                   "AND (metasql_name=<? value('name') ?>);");
 
-  int metasqlid = -1;
+  _selectMql = new MetaSQLQuery("SELECT saveObject('metasql', <? value('group') ?>, <? value('name') ?>, "
+                                 "<? value('grade') ?>, <? value('source') ?>, "
+                                 "<? value('notes') ?>, NULL, <? value('pkgname') ?>);");
 
-  XSqlQuery upsert = upsertm.toQuery(upsertp);
-  if (upsert.first())
-    metasqlid = upsert.value(0).toInt();
-  else if (upsert.lastError().type() != QSqlError::NoError)
-  {
-    XSqlQuery gradedrollback("ROLLBACK TO SAVEPOINT savemetasql_graded;");
-    upsertp.append("skipgrade");
-    upsert = upsertm.toQuery(upsertp);
-    if (upsert.first())
-      metasqlid = upsert.value(0).toInt();
-    if (upsert.lastError().type() != QSqlError::NoError)
-    {
-      QSqlError err = upsert.lastError();
-      errMsg = _sqlerrtxt.arg(_filename).arg(err.driverText()).arg(err.databaseText());
-      return -6;
-    }
-  }
-  else
-  {
-    errMsg = TR("Saving the MetaSQL statement returned 0 rows. This should "
-                "not be possible.");
-    return -6;
-  }
+  ParameterList params;
+  params.append("tablename", "metasql");
+  params.append("group", _group);
 
-  if (metasqlid < 0)
-  {
-    errMsg = TR("The %1 stored procedure failed, returning %2.")
-              .arg("saveMetasql").arg(metasqlid);
-    return -5;
-  }
-  else
-    XSqlQuery gradedrelease("RELEASE SAVEPOINT savemetasql_graded;");
-
-  if (DEBUG)
-    qDebug("LoadMetasql::writeToDB() executed %s and got %d in return",
-           qPrintable(upsert.executedQuery()), metasqlid);
-
-  return metasqlid;
+  return Loadable::writeToDB(pdata, pkgname, errMsg, params);
 }
