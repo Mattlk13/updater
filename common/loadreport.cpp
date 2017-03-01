@@ -86,9 +86,35 @@ int LoadReport::writeToDB(const QByteArray &pdata, const QString pkgname, QStrin
                    "FROM report "
                    "WHERE (report_name=<? value('name') ?>);");
 
-  _selectMql = new MetaSQLQuery("SELECT saveObject('report', NULL, <? value('name') ?>, "
-                                 "<? value('grade') ?>, <? value('source') ?>, "
-                                 "<? value('notes') ?>, NULL, <? value('pkgname') ?>);");
+  _gradeMql = new MetaSQLQuery("SELECT MIN(sequence_value-1) "
+                     "            FROM sequence "
+                     "           WHERE sequence_value-1>=<? value('grade') ?> "
+                     "             AND sequence_value-1 NOT IN (SELECT report_grade "
+                     "                                            FROM report "
+                     "                                            JOIN pg_class c ON report.tableoid=c.oid "
+                     "                                            JOIN pg_namespace n ON c.relnamespace=n.oid "
+                     "                                           WHERE report_name=<? value('name') ?> "
+                     "                                             AND n.nspname!=<? value('pkgname') ?>);");
+
+  _selectMql = new MetaSQLQuery("SELECT report_id, -1, -1"
+                      "  FROM ONLY <? literal('tablename') ?> "
+                      " WHERE ((report_name=<? value('name') ?>) "
+                      "    AND (report_grade=<? value('grade') ?>) );");
+
+  _updateMql = new MetaSQLQuery("UPDATE <? literal('tablename') ?> "
+                      "   SET report_descrip=<? value('notes') ?>, "
+                      "       report_source=<? value('source') ?> "
+                      " WHERE (report_id=<? value('id') ?>) "
+                      "RETURNING report_id AS id;");
+
+  _insertMql = new MetaSQLQuery("INSERT INTO <? literal('tablename') ?> ("
+                      "    report_id, report_name,"
+                      "    report_grade, report_source, report_descrip"
+                      ") VALUES ("
+                      "    DEFAULT, <? value('name') ?>,"
+                      "    <? value('grade') ?>, <? value('source') ?>,"
+                      "    <? value('notes') ?>) "
+                      "RETURNING report_id AS id;");
 
   ParameterList params;
   params.append("tablename", "report");

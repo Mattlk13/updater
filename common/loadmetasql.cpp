@@ -116,9 +116,37 @@ int LoadMetasql::writeToDB(const QByteArray &pdata, const QString pkgname, QStri
                    "WHERE (metasql_group=<? value('group') ?>) "
                    "AND (metasql_name=<? value('name') ?>);");
 
-  _selectMql = new MetaSQLQuery("SELECT saveObject('metasql', <? value('group') ?>, <? value('name') ?>, "
-                                 "<? value('grade') ?>, <? value('source') ?>, "
-                                 "<? value('notes') ?>, NULL, <? value('pkgname') ?>);");
+  _gradeMql = new MetaSQLQuery("SELECT MIN(sequence_value-1) "
+                     "            FROM sequence "
+                     "           WHERE sequence_value-1>=<? value('grade') ?> "
+                     "             AND sequence_value-1 NOT IN (SELECT metasql_grade "
+                     "                                            FROM metasql "
+                     "                                            JOIN pg_class c ON metasql.tableoid=c.oid "
+                     "                                            JOIN pg_namespace n ON c.relnamespace=n.oid "
+                     "                                           WHERE metasql_group=<? value('group') ?> "
+                     "                                             AND metasql_name=<? value('name') ?> "
+                     "                                             AND n.nspname!=<? value('pkgname') ?>);");
+
+  _selectMql = new MetaSQLQuery("SELECT metasql_id, -1, -1"
+                      "  FROM ONLY <? literal('tablename') ?> "
+                      " WHERE ((metasql_group=<? value('group') ?>) "
+                      "    AND (metasql_name=<? value('name') ?>) "
+                      "    AND (metasql_grade=<? value('grade') ?>) );");
+
+  _updateMql = new MetaSQLQuery("UPDATE <? literal('tablename') ?> "
+                      "   SET metasql_notes=<? value('notes') ?>, "
+                      "       metasql_query=<? value('source') ?> "
+                      " WHERE (metasql_id=<? value('id') ?>) "
+                      "RETURNING metasql_id AS id;");
+
+  _insertMql = new MetaSQLQuery("INSERT INTO <? literal('tablename') ?> ("
+                      "    metasql_group, metasql_name,"
+                      "    metasql_grade, metasql_query, metasql_notes"
+                      ") VALUES ("
+                      "    <? value('group') ?>, <? value('name') ?>,"
+                      "    <? value('grade') ?>, <? value('source') ?>,"
+                      "    <? value('notes') ?>) "
+                      "RETURNING metasql_id AS id;");
 
   ParameterList params;
   params.append("tablename", "metasql");

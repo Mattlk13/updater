@@ -121,9 +121,39 @@ int LoadAppUI::writeToDB(const QByteArray &pdata, const QString pkgname, QString
                    "FROM uiform "
                    "WHERE (uiform_name=<? value('name') ?>);");
 
-  _selectMql = new MetaSQLQuery("SELECT saveObject('metasql', NULL, <? value('name') ?>, "
-                                "<? value('grade') ?>, <? value('source') ?>, "
-                                "<? value('notes') ?>, <? value('enabled') ?>, <? value('pkgname') ?>);");
+  _gradeMql = new MetaSQLQuery("SELECT MIN(sequence_value-1) "
+                     "            FROM sequence "
+                     "           WHERE sequence_value-1>=<? value('grade') ?> "
+                     "             AND sequence_value-1 NOT IN (SELECT uiform_order "
+                     "                                            FROM uiform "
+                     "                                            JOIN pg_class c ON uiform.tableoid=c.oid "
+                     "                                            JOIN pg_namespace n ON c.relnamespace=n.oid "
+                     "                                           WHERE uiform_name=<? value('name') ?> "
+                     "                                             AND n.nspname!=<? value('pkgname') ?>);");
+
+  _selectMql = new MetaSQLQuery("SELECT uiform_id, -1, -1"
+                      "  FROM ONLY <? literal('tablename') ?> "
+                      " WHERE ((uiform_name=<? value('name') ?>)"
+                      "   AND  (uiform_order=<? value('grade') ?>));");
+
+  _updateMql = new MetaSQLQuery("UPDATE <? literal('tablename') ?> "
+                      "   SET uiform_order=<? value('grade') ?>, "
+                      "       uiform_enabled=<? value('enabled') ?>,"
+                      "       uiform_source=<? value('source') ?>,"
+                      "       uiform_notes=<? value('notes') ?> "
+                      " WHERE (uiform_id=<? value('id') ?>) "
+                      "RETURNING uiform_id AS id;");
+
+  _insertMql = new MetaSQLQuery("INSERT INTO <? literal('tablename') ?> ("
+                      "    uiform_id, uiform_name,"
+                      "    uiform_order, uiform_enabled, "
+                      "    uiform_source, uiform_notes"
+                      ") VALUES ("
+                      "    DEFAULT, <? value('name') ?>,"
+                      "    <? value('grade') ?>, <? value('enabled') ?>,"
+                      "    <? value('source') ?>,"
+                      "    <? value('notes') ?>) "
+                      "RETURNING uiform_id AS id;");
 
   ParameterList params;
   params.append("enabled",   QVariant(_enabled));
