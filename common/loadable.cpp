@@ -220,7 +220,15 @@ int Loadable::writeToDB(const QByteArray &pdata, const QString pkgname,
       return -5;
     }
 
-    params.append("grade", _grade);
+    for (int i = 0; i < params.size(); i++)
+    {
+      if (params.at(i).name() == "grade")
+      {
+        params.takeAt(i);
+        params.append("grade", _grade);
+        break;
+      }
+    }
   }
 
   XSqlQuery select;
