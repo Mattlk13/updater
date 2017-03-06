@@ -121,8 +121,18 @@ int LoadAppUI::writeToDB(const QByteArray &pdata, const QString pkgname, QString
                    "FROM uiform "
                    "WHERE (uiform_name=<? value('name') ?>);");
 
+  _gradeMql = new MetaSQLQuery("SELECT MIN(sequence_value-1) "
+                     "            FROM sequence "
+                     "           WHERE sequence_value-1>=<? value('grade') ?> "
+                     "             AND sequence_value-1 NOT IN (SELECT uiform_order "
+                     "                                            FROM uiform "
+                     "                                            JOIN pg_class c ON uiform.tableoid=c.oid "
+                     "                                            JOIN pg_namespace n ON c.relnamespace=n.oid "
+                     "                                           WHERE uiform_name=<? value('name') ?> "
+                     "                                             AND n.nspname!=<? value('pkgname') ?>);");
+
   _selectMql = new MetaSQLQuery("SELECT uiform_id, -1, -1"
-                      "  FROM <? literal('tablename') ?> "
+                      "  FROM ONLY <? literal('tablename') ?> "
                       " WHERE ((uiform_name=<? value('name') ?>)"
                       "   AND  (uiform_order=<? value('grade') ?>));");
 

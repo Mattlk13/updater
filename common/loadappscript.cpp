@@ -95,11 +95,11 @@ int LoadAppScript::writeToDB(const QByteArray &pdata, const QString pkgname, QSt
                    "WHERE (script_name=<? value('name') ?>);");
 
   _selectMql = new MetaSQLQuery("SELECT script_id, -1, -1"
-                      "  FROM <? literal('tablename') ?> "
+                      "  FROM ONLY <? literal('tablename') ?> "
                       " WHERE ((script_name=<? value('name') ?>)"
                       "    AND (script_order=<? value('grade') ?>));");
 
-  _updateMql = new MetaSQLQuery("UPDATE <? literal('tablename') ?> "
+  _updateMql = new MetaSQLQuery("UPDATE ONLY <? literal('tablename') ?> "
                       "   SET script_order=<? value('grade') ?>, "
                       "       script_enabled=<? value('enabled') ?>,"
                       "       script_source=<? value('source') ?>,"

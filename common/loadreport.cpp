@@ -78,73 +78,6 @@ int LoadReport::writeToDB(const QByteArray &pdata, const QString pkgname, QStrin
     return -3;
   }
 
-  /* the following block avoids
-      ERROR:  duplicate key violates unique constraint "report_name_grade_idx"
-   */
-  if (! pkgname.isEmpty())
-  {
-    // if there's a version of the report that's not part of this pkg
-    XSqlQuery select;
-    select.prepare("SELECT report_id "
-                   "FROM report r JOIN pg_class c ON (r.tableoid=c.oid)"
-                   "              JOIN pg_namespace n ON (relnamespace=n.oid) "
-                   "WHERE ((report_name=:name)"
-                   "  AND  (report_grade=:grade)"
-                   "  AND  (nspname<>:pkgname));");
-    select.bindValue(":name",    _name);
-    select.bindValue(":grade",   _grade);
-    select.bindValue(":pkgname", pkgname);
-    select.exec();
-    if(select.first())
-    {
-      // then find the next open higher grade
-      XSqlQuery next;
-      next.prepare("SELECT MIN(sequence_value) AS next "
-                       "FROM sequence "
-                       "WHERE ((sequence_value NOT IN ("
-                       "      SELECT report_grade"
-                       "      FROM report"
-                       "      WHERE (report_name=:name)))"
-                       "  AND (sequence_value>=:grade));");
-      next.bindValue(":name", _name);
-      next.bindValue(":grade",   _grade);
-      next.exec();
-      if (next.first())
-        _grade = next.value(0).toInt();
-      else if (next.lastError().type() != QSqlError::NoError)
-      {
-        QSqlError err = next.lastError();
-        errMsg = _sqlerrtxt.arg(_filename).arg(err.driverText()).arg(err.databaseText());
-        return -8;
-      }
-
-      // unless there's a version of the report that is part of this pkg
-      select.prepare("SELECT report_grade "
-                     "FROM report r JOIN pg_class c ON (r.tableoid=c.oid)"
-                     "              JOIN pg_namespace n ON (relnamespace=n.oid) "
-                     "WHERE ((report_name=:name)"
-                     "  AND  (nspname=:pkgname));");
-      select.bindValue(":name",    _name);
-      select.bindValue(":pkgname", pkgname);
-      select.exec();
-
-      if (select.first())
-        _grade = select.value(0).toInt();
-      else if (next.lastError().type() != QSqlError::NoError)
-      {
-        QSqlError err = next.lastError();
-        errMsg = _sqlerrtxt.arg(_filename).arg(err.driverText()).arg(err.databaseText());
-        return -10;
-      }
-    }
-    else if (select.lastError().type() != QSqlError::NoError)
-    {
-      QSqlError err = select.lastError();
-      errMsg = _sqlerrtxt.arg(_filename).arg(err.driverText()).arg(err.databaseText());
-      return -9;
-    }
-  }
-
   _minMql = new MetaSQLQuery("SELECT MIN(report_grade) AS min "
                    "FROM report "
                    "WHERE (report_name=<? value('name') ?>);");
@@ -153,8 +86,18 @@ int LoadReport::writeToDB(const QByteArray &pdata, const QString pkgname, QStrin
                    "FROM report "
                    "WHERE (report_name=<? value('name') ?>);");
 
+  _gradeMql = new MetaSQLQuery("SELECT MIN(sequence_value-1) "
+                     "            FROM sequence "
+                     "           WHERE sequence_value-1>=<? value('grade') ?> "
+                     "             AND sequence_value-1 NOT IN (SELECT report_grade "
+                     "                                            FROM report "
+                     "                                            JOIN pg_class c ON report.tableoid=c.oid "
+                     "                                            JOIN pg_namespace n ON c.relnamespace=n.oid "
+                     "                                           WHERE report_name=<? value('name') ?> "
+                     "                                             AND n.nspname!=<? value('pkgname') ?>);");
+
   _selectMql = new MetaSQLQuery("SELECT report_id, -1, -1"
-                      "  FROM report "
+                      "  FROM ONLY <? literal('tablename') ?> "
                       " WHERE ((report_name=<? value('name') ?>) "
                       "    AND (report_grade=<? value('grade') ?>) );");
 

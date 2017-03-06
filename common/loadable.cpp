@@ -40,6 +40,7 @@ Loadable::Loadable(const QString &nodename, const QString &name,
 
   _minMql    = 0;
   _maxMql    = 0;
+  _gradeMql  = 0;
   _selectMql = 0;
   _insertMql = 0;
   _updateMql = 0;
@@ -91,6 +92,7 @@ Loadable::Loadable(const QDomElement & elem, const bool system,
 
   _minMql    = 0;
   _maxMql    = 0;
+  _gradeMql  = 0;
   _selectMql = 0;
   _insertMql = 0;
   _updateMql = 0;
@@ -100,6 +102,7 @@ Loadable::~Loadable()
 {
   if (_minMql)    delete _minMql;
   if (_maxMql)    delete _maxMql;
+  if (_gradeMql) delete _gradeMql;
   if (_selectMql) delete _selectMql;
   if (_insertMql) delete _insertMql;
   if (_updateMql) delete _updateMql;
@@ -202,6 +205,31 @@ int Loadable::writeToDB(const QByteArray &pdata, const QString pkgname,
   }
 
   params.append("grade", _grade);
+
+  if (_gradeMql && _gradeMql->isValid())
+  {
+    XSqlQuery grade;
+    grade = _gradeMql->toQuery(params);
+
+    if (grade.first())
+      _grade = grade.value(0).toInt();
+    else if (grade.lastError().type() != QSqlError::NoError)
+    {
+      QSqlError err = grade.lastError();
+      errMsg = _sqlerrtxt.arg(_filename).arg(err.driverText()).arg(err.databaseText());
+      return -5;
+    }
+
+    for (int i = 0; i < params.size(); i++)
+    {
+      if (params.at(i).name() == "grade")
+      {
+        params.takeAt(i);
+        params.append("grade", _grade);
+        break;
+      }
+    }
+  }
 
   XSqlQuery select;
   int itemid = -1;

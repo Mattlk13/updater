@@ -63,6 +63,7 @@ class Loadable
     QString      _comment;
     QString      _filename;
     int          _grade;
+    MetaSQLQuery *_gradeMql;
     bool         _inpackage;
     MetaSQLQuery *_insertMql;
     MetaSQLQuery *_selectMql;
