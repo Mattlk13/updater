@@ -128,22 +128,32 @@ int main(int argc, char* argv[])
   handler = mainwin->handler();
   handler->setAcceptDefaults(autoRunArg && acceptDefaults);
 
-  db = QSqlDatabase::addDatabase("QPSQL7");
-  if (!db.isValid())
+  ParameterList params;
+  params.append("name",      Updater::name);
+  params.append("copyright", Updater::copyright);
+  params.append("version",   Updater::version);
+  params.append("build",     Updater::build);
+  params.append("username",  username);
+  params.append("password",  passwd);
+
+  if (haveDatabaseURL)
+    params.append("databaseURL", _databaseURL.toLatin1().data());
+  
+  if (autoRunArg)
   {
-    handler->message(QtFatalMsg,
-                     QObject::tr("Unable to load the database driver. "
-                                 "Please contact your systems administrator."));
-    return 1;
+    if (!haveDatabaseURL)
+    {
+      buildDatabaseURL(_databaseURL, "psql", hostName, dbName, port);
+      params.append("databaseURL", _databaseURL.toLatin1().data());
+    }
+    params.append("cmd");
+    params.append("login");
   }
 
-  db.setDatabaseName(dbName);
-  db.setUserName(username);
-  db.setPassword(passwd);
-  db.setHostName(hostName);
-  db.setPort(port.toInt());
+  login2 newdlg(0, "", true);
+  newdlg.set(params, 0);
 
-  if (!db.open() && autoRunArg)
+  if (!QSqlDatabase::database(QSqlDatabase::defaultConnection, false).isOpen() && autoRunArg)
   {
     handler->message(QtFatalMsg,
                      QObject::tr("Unable to connect to the database "
@@ -151,60 +161,48 @@ int main(int argc, char* argv[])
     return 1;
   }
 
-  if (!db.open())
+  if (!autoRunArg)
   {
-    ParameterList params;
-    params.append("name",      Updater::name);
-    params.append("copyright", Updater::copyright);
-    params.append("version",   Updater::version);
-    params.append("build",     Updater::build);
-    params.append("username",  username);
-
-    if (haveDatabaseURL)
-      params.append("databaseURL", _databaseURL.toLatin1().data());
-
-    login2 newdlg(0, "", true);
-    newdlg.set(params, 0);
-
     if (newdlg.exec() == QDialog::Rejected)
       return 2;
 
     _databaseURL = newdlg._databaseURL;
     username     = newdlg._user;
-    Updater::loggedIn = true;
-    mainwin->setWindowTitle();
-
-    QSqlQuery set("SET standard_conforming_strings TO true;");
-    if (set.lastError().type() != QSqlError::NoError)
-      handler->message(QtWarningMsg,
-                       QObject::tr("Unable to set standard_conforming_strings. "
-                                   "Updates may fail with unexpected errors."));
-
-    QSqlQuery su;
-    su.prepare("SELECT rolsuper FROM pg_roles WHERE (rolname=:user);");
-    su.bindValue(":user", username);
-    su.exec();
-    if (su.first())
-    {
-      if (! su.value(0).toBool() &&
-          handler->question(QObject::tr("You are not logged in as a "
-                                        "database super user. The update "
-                                        "may fail. Are you sure you want "
-                                        "to continue?"),
-                            QMessageBox::Yes | QMessageBox::No,
-                            QMessageBox::No) == QMessageBox::No)
-        return 3;
-    }
-    else if (su.lastError().type() != QSqlError::NoError &&
-             handler->question(QObject::tr("<p>The application received a database "
-                                           "error while trying to check the user "
-                                           "status of %1. Would you like to try to "
-                                           "update anyway?</p><pre>%2</pre>")
-                            .arg(username, su.lastError().databaseText()),
-                            QMessageBox::Yes | QMessageBox::No,
-                            QMessageBox::No) == QMessageBox::No)
-      return 4;
   }
+
+  Updater::loggedIn = true;
+  mainwin->setWindowTitle();
+
+  QSqlQuery set("SET standard_conforming_strings TO true;");
+  if (set.lastError().type() != QSqlError::NoError)
+    handler->message(QtWarningMsg,
+                     QObject::tr("Unable to set standard_conforming_strings. "
+                                 "Updates may fail with unexpected errors."));
+
+  QSqlQuery su;
+  su.prepare("SELECT rolsuper FROM pg_roles WHERE (rolname=:user);");
+  su.bindValue(":user", username);
+  su.exec();
+  if (su.first())
+  {
+    if (! su.value(0).toBool() &&
+        handler->question(QObject::tr("You are not logged in as a "
+                                      "database super user. The update "
+                                      "may fail. Are you sure you want "
+                                      "to continue?"),
+                          QMessageBox::Yes | QMessageBox::No,
+                          QMessageBox::No) == QMessageBox::No)
+      return 3;
+  }
+  else if (su.lastError().type() != QSqlError::NoError &&
+           handler->question(QObject::tr("<p>The application received a database "
+                                         "error while trying to check the user "
+                                         "status of %1. Would you like to try to "
+                                         "update anyway?</p><pre>%2</pre>")
+                          .arg(username, su.lastError().databaseText()),
+                          QMessageBox::Yes | QMessageBox::No,
+                          QMessageBox::No) == QMessageBox::No)
+    return 4;
 
   if (! pkgfile.isEmpty())
   {

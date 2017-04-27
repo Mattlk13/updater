@@ -45,9 +45,6 @@ HEADERS = updaterdata.h                 \
           loadreport.h \
           pkgschema.h \
           prerequisite.h \
-          xabstractmessagehandler.h    \
-          cmdlinemessagehandler.h      \
-          guimessagehandler.h          \
           xversion.h
 
 SOURCES = updaterdata.cpp              \
@@ -71,7 +68,4 @@ SOURCES = updaterdata.cpp              \
           loadreport.cpp \
           pkgschema.cpp \
           prerequisite.cpp \
-          xabstractmessagehandler.cpp  \
-          cmdlinemessagehandler.cpp    \
-          guimessagehandler.cpp        \
           xversion.cpp

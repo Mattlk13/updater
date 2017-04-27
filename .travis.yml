@@ -11,11 +11,10 @@ before_install:
 
 compiler:
   - gcc
-# - clang
 
 before_script:
   - cd ..
-  - git clone -b 4_10_x https://github.com/xtuple/qt-client.git
+  - git clone -b 4_11_x https://github.com/xtuple/qt-client.git
   - cd qt-client
   - git submodule update --init --recursive
   - cd openrpt
