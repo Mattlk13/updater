@@ -133,7 +133,8 @@ int main(int argc, char* argv[])
   params.append("copyright", Updater::copyright);
   params.append("version",   Updater::version);
   params.append("build",     Updater::build);
-  params.append("username",  username);
+  if (username.length() > 0)
+    params.append("username",  username);
   params.append("password",  passwd);
 
   if (haveDatabaseURL)
