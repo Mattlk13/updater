@@ -52,19 +52,34 @@ int LoadQm::writeToDB(const QByteArray &pdata, const QString pkgname, QString &e
 
 
         QString version;
-        XSqlQuery getver;
-        getver.prepare("SELECT pkghead_version "
-                       "  FROM pkghead "
-                       " WHERE pkghead_name=:name;");
-        getver.bindValue(":name", pkgname);
-        getver.exec();
-        if (getver.first())
-          version = getver.value("pkghead_version").toString();
-        else if (getver.lastError().type() != QSqlError::NoError)
+        if (pkgname.isEmpty())
         {
-          QSqlError err = getver.lastError();
-          errMsg = err.databaseText();
-          return -1;
+          XSqlQuery getver("SELECT fetchmetrictext('ServerVersion') AS version;");
+          if (getver.first())
+            version = getver.value("version").toString();
+          else if (getver.lastError().type() != QSqlError::NoError)
+          {
+            QSqlError err = getver.lastError();
+            errMsg = err.databaseText();
+            return -1;
+          }
+        }
+        else
+        {
+          XSqlQuery getver;
+          getver.prepare("SELECT pkghead_version "
+                         "  FROM pkghead "
+                         " WHERE pkghead_name=:name;");
+          getver.bindValue(":name", pkgname);
+          getver.exec();
+          if (getver.first())
+            version = getver.value("pkghead_version").toString();
+          else if (getver.lastError().type() != QSqlError::NoError)
+          {
+            QSqlError err = getver.lastError();
+            errMsg = err.databaseText();
+            return -1;
+          }
         }
 
 	//give the 0 pointer a MetaSQLQuery value
