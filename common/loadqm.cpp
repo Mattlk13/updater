@@ -92,11 +92,11 @@ int LoadQm::writeToDB(const QByteArray &pdata, const QString pkgname, QString &e
   _selectMql = new MetaSQLQuery("SELECT dict_id "
                                 "  FROM ONLY <? literal('tablename') ?> "
                                 " WHERE dict_lang_id=<? value('lang') ?> "
-                                "   AND dict_country_id=<? value('country') ?>;");
+                                "   AND dict_country_id=<? value('country') ?> "
+                                "   AND dict_version=<? value('version') ?>;");
 
   _updateMql = new MetaSQLQuery("UPDATE <? literal('tablename') ?> "
-                                "   SET dict_data=<? value('data') ?>, "
-                                "       dict_version=<? value('version') ?> "
+                                "   SET dict_data=<? value('data') ?> "
                                 " WHERE dict_id=<? value('id') ?> "
                                 "RETURNING dict_id AS id;");
 
