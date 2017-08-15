@@ -47,14 +47,7 @@ int PkgSchema::create(QString &errMsg)
 
   int namespaceoid;
   XSqlQuery create;
-  // Issue 8835: This SQL looks for an existing schema first.  Would be best if the createPkgSchema 
-  // function did this correctly so it could be smart enough to add new tables if necessary,
-  // but we can't work that out until it becomes required in a subsequent xTuple ERP release.
-  create.prepare("SELECT COALESCE( "
-                 " (SELECT oid "
-                 "  FROM pg_namespace "
-                 "  WHERE (LOWER(nspname)=LOWER(:name))), "
-                 " createPkgSchema(:name, :descrip)) AS result;"); 
+  create.prepare("SELECT createPkgSchema(:name, :descrip) AS result;"); 
   create.bindValue(":name",    _name);
   create.bindValue(":descrip", _comment);
 

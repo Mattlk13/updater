@@ -54,6 +54,7 @@ class Package
     QList<Loadable*>     _metasqls;
     QList<Loadable*>     _privs;
     QList<Prerequisite*> _prerequisites;
+    QList<Loadable*>     _qms;
     QList<Script*>       _scripts;
     QList<Script*>       _finalscripts;
     QList<Script*>       _initscripts;
@@ -67,6 +68,7 @@ class Package
     bool containsPrerequisite(const QString &name) const;
     bool containsMetasql(const QString &name)      const;
     bool containsPriv(const QString &name)         const;
+    bool containsQm(const QString &name)           const;
     bool containsReport(const QString &name)       const;
     bool containsScript(const QString &name)       const;
     bool containsFinalScript(const QString &name)  const;

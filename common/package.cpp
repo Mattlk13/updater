@@ -28,6 +28,7 @@
 #include "loadmetasql.h"
 #include "loadpriv.h"
 #include "loadreport.h"
+#include "loadqm.h"
 #include "prerequisite.h"
 #include "script.h"
 #include "finalscript.h"
@@ -140,6 +141,8 @@ Package::Package(const QDomElement & elem, QStringList &msgList,
       _cmds.append(new LoadCmd(elemThis, system(), msgList, fatalList));
     else if(elemThis.tagName() == "loadimage")
       _images.append(new LoadImage(elemThis, system(), msgList, fatalList));
+    else if(elemThis.tagName() == "loadqm")
+      _qms.append(new LoadQm(elemThis, system(), msgList, fatalList));
     else if (elemThis.tagName() == "pkgnotes")
       _notes += elemThis.text();
     else if(elemThis.tagName() == "prerequisite")
@@ -179,6 +182,7 @@ Package::Package(const QDomElement & elem, QStringList &msgList,
     qDebug("_appscripts:    %d", _appscripts.size());
     qDebug("_cmds:          %d", _cmds.size());
     qDebug("_images:        %d", _images.size());
+    qDebug("_qms:           %d", _qms.size());
     qDebug("_prerequisites: %d", _prerequisites.size());
     qDebug("_scripts:       %d", _scripts.size());
   }
@@ -360,6 +364,16 @@ bool Package::containsMetasql(const QString &pname) const
 bool Package::containsPriv(const QString &pname) const
 {
   foreach (Loadable *it, _privs)
+  {
+    if (it->name() == pname)
+      return true;
+  }
+  return false;
+}
+
+bool Package::containsQm(const QString &pname) const
+{
+  foreach (Loadable *it, _qms)
   {
     if (it->name() == pname)
       return true;
