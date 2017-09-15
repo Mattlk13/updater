@@ -1,7 +1,7 @@
 /*
  * This file is part of the xTuple ERP: PostBooks Edition, a free and
  * open source Enterprise Resource Planning software suite,
- * Copyright (c) 1999-2015 by OpenMFG LLC, d/b/a xTuple.
+ * Copyright (c) 1999-2017 by OpenMFG LLC, d/b/a xTuple.
  * It is licensed to you under the Common Public Attribution License
  * version 1.0, the full text of which (including xTuple-specific Exhibits)
  * is available at www.xtuple.com/CPAL.  By using this software, you agree
@@ -11,10 +11,8 @@
 #include "loadappscript.h"
 
 #include <QDomElement>
-#include <QSqlError>
-#include <QVariant>     // used by XSqlQuery::bindValue()
-#include <limits.h>
 
+#include "metasql.h"
 #include "xsqlquery.h"
 
 LoadAppScript::LoadAppScript(const QString &name, const int order,
@@ -72,7 +70,7 @@ LoadAppScript::LoadAppScript(const QDomElement &elem, const bool system,
   }
 }
 
-int LoadAppScript::writeToDB(const QByteArray &pdata, const QString pkgname, QString &errMsg)
+int LoadAppScript::writeToDB(QByteArray &pdata, const QString pkgname, QString &errMsg)
 {
   if (_name.isEmpty())
   {

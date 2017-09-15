@@ -1,7 +1,7 @@
 /*
  * This file is part of the xTuple ERP: PostBooks Edition, a free and
  * open source Enterprise Resource Planning software suite,
- * Copyright (c) 1999-2016 by OpenMFG LLC, d/b/a xTuple.
+ * Copyright (c) 1999-2017 by OpenMFG LLC, d/b/a xTuple.
  * It is licensed to you under the Common Public Attribution License
  * version 1.0, the full text of which (including xTuple-specific Exhibits)
  * is available at www.xtuple.com/CPAL.  By using this software, you agree
@@ -855,7 +855,8 @@ int LoaderWindow::applySql(Script *pscript, const QByteArray psql)
       pscript->setOnError(Script::Stop);
 
     ParameterList params;
-    int scriptreturn = pscript->writeToDB(psql, _package->name(), params, message);
+    QByteArray sql(psql);
+    int scriptreturn = pscript->writeToDB(sql, _package->name(), params, message);
     if (scriptreturn == -1)
     {
       _p->handler->message(QtWarningMsg,
@@ -956,7 +957,8 @@ int LoaderWindow::applyLoadable(Loadable *pscript, const QByteArray psql)
     if (pscript->onError() == Script::Default)
       pscript->setOnError(Script::Stop);
 
-    int scriptreturn = pscript->writeToDB(psql, _package->name(), message);
+    QByteArray sql(psql);
+    int scriptreturn = pscript->writeToDB(sql, _package->name(), message);
     if (scriptreturn < 0)
     {
       bool fatal = ! (pscript->onError() == Script::Ignore);

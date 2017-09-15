@@ -1,4 +1,4 @@
-SELECT dropIfExists('VIEW', 'pkgtestview', 'telephonelookup');
+DROP VIEW IF EXISTS telephonelookup.pkgtestview;
 CREATE VIEW pkgtestview AS SELECT a FROM pkgtest;
 REVOKE ALL ON pkgtestview FROM public;
-GRANT ALL ON pkgtestview TO xtrole;
+GRANT  ALL ON pkgtestview TO xtrole;

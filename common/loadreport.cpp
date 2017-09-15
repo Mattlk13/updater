@@ -1,7 +1,7 @@
 /*
  * This file is part of the xTuple ERP: PostBooks Edition, a free and
  * open source Enterprise Resource Planning software suite,
- * Copyright (c) 1999-2015 by OpenMFG LLC, d/b/a xTuple.
+ * Copyright (c) 1999-2017 by OpenMFG LLC, d/b/a xTuple.
  * It is licensed to you under the Common Public Attribution License
  * version 1.0, the full text of which (including xTuple-specific Exhibits)
  * is available at www.xtuple.com/CPAL.  By using this software, you agree
@@ -11,11 +11,8 @@
 #include "loadreport.h"
 
 #include <QDomDocument>
-#include <QMessageBox>
-#include <QSqlError>
-#include <QVariant>     // used by XSqlQuery::bindValue()
-#include <limits.h>
 
+#include "metasql.h"
 #include "xsqlquery.h"
 
 LoadReport::LoadReport(const QString &name, const int grade, const bool system,
@@ -39,12 +36,13 @@ LoadReport::LoadReport(const QDomElement & elem, const bool system,
   }
 }
 
-int LoadReport::writeToDB(const QByteArray &pdata, const QString pkgname, QString &errMsg)
+int LoadReport::writeToDB(QByteArray &pData, const QString pPkgname, QString &errMsg)
 {
   int errLine = 0;
   int errCol  = 0;
   QDomDocument doc;
-  if (! doc.setContent(pdata, &errMsg, &errLine, &errCol))
+  cleanData(pData);
+  if (! doc.setContent(pData, &errMsg, &errLine, &errCol))
   {
     errMsg = (TR("<font color=red>Error parsing file %1: %2 on "
                           "line %3 column %4</font>")
@@ -119,5 +117,5 @@ int LoadReport::writeToDB(const QByteArray &pdata, const QString pkgname, QStrin
   ParameterList params;
   params.append("tablename", "report");
 
-  return Loadable::writeToDB(pdata, pkgname, errMsg, params);
+  return Loadable::writeToDB(pData, pPkgname, errMsg, params);
 }

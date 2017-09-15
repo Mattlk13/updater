@@ -1,7 +1,7 @@
 /*
  * This file is part of the xTuple ERP: PostBooks Edition, a free and
  * open source Enterprise Resource Planning software suite,
- * Copyright (c) 1999-2015 by OpenMFG LLC, d/b/a xTuple.
+ * Copyright (c) 1999-2017 by OpenMFG LLC, d/b/a xTuple.
  * It is licensed to you under the Common Public Attribution License
  * version 1.0, the full text of which (including xTuple-specific Exhibits)
  * is available at www.xtuple.com/CPAL.  By using this software, you agree
@@ -12,10 +12,9 @@
 
 #include <QDomDocument>
 #include <QSqlError>
-#include <QStringList>
-#include <QVariant>     // used by XSqlQuery::bindValue()
 
 #include "loadable.h"
+#include "metasql.h"
 #include "xsqlquery.h"
 
 #define DEBUG false
@@ -128,7 +127,7 @@ QDomElement LoadCmd::createElement(QDomDocument &doc)
   return elem;
 }
 
-int LoadCmd::writeToDB(const QByteArray &pdata, const QString pkgname, QString &errMsg)
+int LoadCmd::writeToDB(QByteArray &pdata, const QString pkgname, QString &errMsg)
 {
   Q_UNUSED(pdata);
   _selectMql = new MetaSQLQuery("SELECT cmd_id, -1, -1"
@@ -163,7 +162,8 @@ int LoadCmd::writeToDB(const QByteArray &pdata, const QString pkgname, QString &
   params.append("privname",  _privname);
   params.append("executable",_executable);
 
-  int cmdid = Loadable::writeToDB(QByteArray(), pkgname, errMsg, params);
+  QByteArray data;
+  int cmdid = Loadable::writeToDB(data, pkgname, errMsg, params);
   if (cmdid < 0)
     return cmdid;
 
