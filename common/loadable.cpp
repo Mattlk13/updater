@@ -43,8 +43,8 @@ Loadable::Loadable(const QString &nodename, const QString &name,
 Loadable::Loadable(const QDomElement &pElem, const bool pSystem,
                    QStringList &pMsg, QList<bool> &pFatal)
   : _grade(0),        _gradeMql(0),
-    _insertMql(0),    _selectMql(0), _maxMql(0), _minMql(0),
-    _system(pSystem), _updateMql(0)
+    _insertMql(0),    _selectMql(0),    _maxMql(0), _minMql(0),
+    _stripBOM(true),  _system(pSystem), _updateMql(0)
 {
   Q_UNUSED(pMsg);
   Q_UNUSED(pFatal);
