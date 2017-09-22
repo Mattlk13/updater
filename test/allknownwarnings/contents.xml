@@ -1,8 +1,9 @@
 <!DOCTYPE packageManagerDef>
-<package version="1.1"
-         id="allknownelemspkg"
-         name="telephonelookup"
-         descrip="Reverse Telephone Directory Lookup">
+<package version   = "1.1"
+         id        = "allknownwarnings"
+         name      = "telephonelookup"
+         developer = "xTuple"
+         descrip   = "Reverse Telephone Directory Lookup">
   <pkgnotes>
     This is a simple test of the packaging functionality in xTuple ERP's
     Updater utility.
@@ -11,15 +12,6 @@
     Just in case someone makes a mistake, what happens if someone adds a second
     set of package notes?
   </pkgnotes>
-
- <prerequisite type="Query" name="Checking SQL DB Server" >
-  <query>SELECT metric_value = 'OpenMFG' OR metric_value = 'PostBooks'
-         FROM metric
-         WHERE metric_name = 'Application';</query>
-  <message>
-    This package requires that it be applied against an xTuple ERP database.
-  </message>
- </prerequisite>
 
  <script        file="initUpgrade" onerror="Ignore" />
  <loadreport    grade="0" file="telephonelookup.xml" />

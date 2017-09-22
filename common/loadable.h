@@ -1,7 +1,7 @@
 /*
  * This file is part of the xTuple ERP: PostBooks Edition, a free and
  * open source Enterprise Resource Planning software suite,
- * Copyright (c) 1999-2015 by OpenMFG LLC, d/b/a xTuple.
+ * Copyright (c) 1999-2017 by OpenMFG LLC, d/b/a xTuple.
  * It is licensed to you under the Common Public Attribution License
  * version 1.0, the full text of which (including xTuple-specific Exhibits)
  * is available at www.xtuple.com/CPAL.  By using this software, you agree
@@ -16,10 +16,9 @@
 
 #include "script.h"
 
-#include <metasql.h>
-
 class QDomDocument;
 class QDomElement;
+class MetaSQLQuery;
 
 #define TR(a) QObject::tr(a)
 
@@ -52,8 +51,9 @@ class Loadable
     virtual void    setOnError(Script::OnError onError) { _onError = onError; }
     virtual void    setSystem(const bool p)             { _system = p; }
     virtual bool    system()   const { return _system; }
-    virtual int writeToDB(const QByteArray &pdata, const QString pkgname,
+    virtual int writeToDB(QByteArray &pdata, const QString pkgname,
                           QString &errMsg) = 0;
+    virtual QByteArray cleanData(QByteArray &pData);
 
     static QRegExp trueRegExp;
     static QRegExp falseRegExp;
@@ -64,7 +64,6 @@ class Loadable
     QString      _filename;
     int          _grade;
     MetaSQLQuery *_gradeMql;
-    bool         _inpackage;
     MetaSQLQuery *_insertMql;
     MetaSQLQuery *_selectMql;
     MetaSQLQuery *_maxMql;
@@ -74,11 +73,12 @@ class Loadable
     Script::OnError _onError;
     QString      _pkgitemtype;
     QString      _schema;
+    bool         _stripBOM;
     bool         _system;
     MetaSQLQuery *_updateMql;
 
-    virtual int writeToDB(const QByteArray &pdata, const QString pkgname,
-                          QString &errMsg, ParameterList &params);
+    virtual int writeToDB(QByteArray &pData, const QString pPkgname,
+                          QString &errMsg, ParameterList &pParams);
 
     static QString      _sqlerrtxt;
 };

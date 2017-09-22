@@ -1,7 +1,7 @@
 /*
  * This file is part of the xTuple ERP: PostBooks Edition, a free and
  * open source Enterprise Resource Planning software suite,
- * Copyright (c) 1999-2015 by OpenMFG LLC, d/b/a xTuple.
+ * Copyright (c) 1999-2017 by OpenMFG LLC, d/b/a xTuple.
  * It is licensed to you under the Common Public Attribution License
  * version 1.0, the full text of which (including xTuple-specific Exhibits)
  * is available at www.xtuple.com/CPAL.  By using this software, you agree
@@ -10,12 +10,14 @@
 
 #include "loadable.h"
 
+#include <QDebug>
 #include <QDomDocument>
 #include <QRegExp>
 #include <QSqlError>
 #include <QVariant>     // used by XSqlQuery::value()
 #include <limits.h>
 
+#include "metasql.h"
 #include "xsqlquery.h"
 
 QRegExp Loadable::trueRegExp("^t(rue)?$",   Qt::CaseInsensitive);
@@ -29,80 +31,69 @@ Loadable::Loadable(const QString &nodename, const QString &name,
                    const int grade, const bool system, const QString &schema,
                    const QString &comment,
                    const QString &filename)
+  : _comment(comment), _grade(grade),       _gradeMql(0),
+    _insertMql(0),     _selectMql(0),       _maxMql(0),      _minMql(0),
+    _name(name),       _nodename(nodename), _onError(Script::Default),
+    _schema(schema),   _stripBOM(true),     _system(system), _updateMql(0)
 {
-  _nodename = nodename;
-  _name     = name;
-  _grade    = grade;
-  _system   = system;
-  _schema   = schema;
-  _comment  = comment;
-  _filename = (filename.isEmpty() ? name : filename);
-
-  _minMql    = 0;
-  _maxMql    = 0;
-  _gradeMql  = 0;
-  _selectMql = 0;
-  _insertMql = 0;
-  _updateMql = 0;
+  _filename = (filename.isEmpty() ? name   : filename);
+  _schema   = (schema.isEmpty()   ? schema : "public");
 }
 
-Loadable::Loadable(const QDomElement & elem, const bool system,
-                   QStringList &/*msg*/, QList<bool> &/*fatal*/)
+Loadable::Loadable(const QDomElement &pElem, const bool pSystem,
+                   QStringList &pMsg, QList<bool> &pFatal)
+  : _grade(0),        _gradeMql(0),
+    _insertMql(0),    _selectMql(0),    _maxMql(0), _minMql(0),
+    _stripBOM(true),  _system(pSystem), _updateMql(0)
 {
-  _system = system;
-  _nodename = elem.nodeName();
-  _grade = 0;
+  Q_UNUSED(pMsg);
+  Q_UNUSED(pFatal);
 
-  if (elem.hasAttribute("name"))
-    _name   = elem.attribute("name");
+  _nodename = pElem.nodeName();
 
-  if (elem.hasAttribute("grade"))
+  if (pElem.hasAttribute("name"))
+    _name   = pElem.attribute("name");
+
+  if (pElem.hasAttribute("grade"))
   {
-    if (elem.attribute("grade").contains("highest", Qt::CaseInsensitive))
+    if (pElem.attribute("grade").contains("highest", Qt::CaseInsensitive))
       _grade = INT_MAX;
-    else if (elem.attribute("grade").contains("lowest", Qt::CaseInsensitive))
+    else if (pElem.attribute("grade").contains("lowest", Qt::CaseInsensitive))
       _grade = INT_MIN;
     else
-      _grade = elem.attribute("grade").toInt();
+      _grade = pElem.attribute("grade").toInt();
   }
-  else if (elem.hasAttribute("order"))
+  else if (pElem.hasAttribute("order"))
   {
-    if (elem.attribute("order").contains("highest", Qt::CaseInsensitive))
+    if (pElem.attribute("order").contains("highest", Qt::CaseInsensitive))
       _grade = INT_MAX;
-    else if (elem.attribute("order").contains("lowest", Qt::CaseInsensitive))
+    else if (pElem.attribute("order").contains("lowest", Qt::CaseInsensitive))
       _grade = INT_MIN;
     else
-      _grade = elem.attribute("order").toInt();
+      _grade = pElem.attribute("order").toInt();
   }
 
-  if (elem.hasAttribute("file"))
-    _filename = elem.attribute("file");
+  if (pElem.hasAttribute("file"))
+    _filename = pElem.attribute("file");
   else
     _filename = _name;
 
-  if (elem.hasAttribute("schema"))
-    _schema = elem.attribute("schema");
+  if (pElem.hasAttribute("schema"))
+    _schema = pElem.attribute("schema");
 
-  if (elem.hasAttribute("onerror"))
-    _onError = Script::nameToOnError(elem.attribute("onerror"));
+  if (pElem.hasAttribute("onerror"))
+    _onError = Script::nameToOnError(pElem.attribute("onerror"));
   else
     _onError = Script::nameToOnError("Stop");
 
-  _comment = elem.text().trimmed();
-
-  _minMql    = 0;
-  _maxMql    = 0;
-  _gradeMql  = 0;
-  _selectMql = 0;
-  _insertMql = 0;
-  _updateMql = 0;
+  _comment = pElem.text().trimmed();
 }
 
 Loadable::~Loadable()
 {
   if (_minMql)    delete _minMql;
   if (_maxMql)    delete _maxMql;
-  if (_gradeMql) delete _gradeMql;
+  if (_gradeMql)  delete _gradeMql;
   if (_selectMql) delete _selectMql;
   if (_insertMql) delete _insertMql;
   if (_updateMql) delete _updateMql;
@@ -128,29 +119,30 @@ QDomElement Loadable::createElement(QDomDocument & doc)
   return elem;
 }
 
-int Loadable::writeToDB(const QByteArray &pdata, const QString pkgname,
-                        QString &errMsg, ParameterList &params)
+int Loadable::writeToDB(QByteArray &pData, const QString pPkgname,
+                        QString &errMsg, ParameterList &pParams)
 {
-  const char *fileContent = pdata.data();
+  cleanData(pData);
+  const char *fileContent = pData.data();
 
-  params.append("name",   _name);
-  params.append("type",   _pkgitemtype);
-  params.append("source", QString::fromLocal8Bit(fileContent));
-  params.append("notes",  _comment);
+  pParams.append("name",   _name);
+  pParams.append("type",   _pkgitemtype);
+  pParams.append("source", QString::fromLocal8Bit(fileContent));
+  pParams.append("notes",  _comment);
 
   // alter the name of the loadable's table if necessary
   QString destschema = "public";
   QString prefix;
-  if (_schema.isEmpty()        &&   pkgname.isEmpty())
+  if (_schema.isEmpty()        &&   pPkgname.isEmpty())
     ;   // leave it alone
-  else if (_schema.isEmpty()   && ! pkgname.isEmpty())
+  else if (_schema.isEmpty()   && ! pPkgname.isEmpty())
   {
-    prefix = pkgname + ".pkg";
-    destschema = pkgname;
+    prefix = pPkgname + ".pkg";
+    destschema = pPkgname;
   }
-  else if ("public" == _schema &&   pkgname.isEmpty())
+  else if ("public" == _schema &&   pPkgname.isEmpty())
     ;   // leave it alone
-  else if ("public" == _schema && ! pkgname.isEmpty())
+  else if ("public" == _schema && ! pPkgname.isEmpty())
     prefix = "public.";
   else if (! _schema.isEmpty())
   {
@@ -160,16 +152,16 @@ int Loadable::writeToDB(const QByteArray &pdata, const QString pkgname,
 
   if (! prefix.isEmpty())
   {
-    params.append("pkgname", destschema);
+    pParams.append("pkgname", destschema);
 
     // yuck - no Parameter::operator==(Parameter&) and no replace()
-    QString tablename = params.value("tablename").toString();
-    for (int i = 0; i < params.size(); i++)
+    QString tablename = pParams.value("tablename").toString();
+    for (int i = 0; i < pParams.size(); i++)
     {
-      if (params.at(i).name() == "tablename")
+      if (pParams.at(i).name() == "tablename")
       {
-        params.takeAt(i);
-        params.append("tablename", prefix + tablename);
+        pParams.takeAt(i);
+        pParams.append("tablename", prefix + tablename);
         break;
       }
     }
@@ -177,7 +169,7 @@ int Loadable::writeToDB(const QByteArray &pdata, const QString pkgname,
 
   if (_minMql && _minMql->isValid() && _grade == INT_MIN)
   {
-    XSqlQuery minOrder = _minMql->toQuery(params);
+    XSqlQuery minOrder = _minMql->toQuery(pParams);
     if (minOrder.first())
       _grade = minOrder.value(0).toInt();
     else if (minOrder.lastError().type() != QSqlError::NoError)
@@ -191,7 +183,7 @@ int Loadable::writeToDB(const QByteArray &pdata, const QString pkgname,
   }
   else if (_maxMql && _maxMql->isValid() && _grade == INT_MAX)
   {
-    XSqlQuery maxOrder = _maxMql->toQuery(params);
+    XSqlQuery maxOrder = _maxMql->toQuery(pParams);
     if (maxOrder.first())
       _grade = maxOrder.value(0).toInt();
     else if (maxOrder.lastError().type() != QSqlError::NoError)
@@ -204,12 +196,12 @@ int Loadable::writeToDB(const QByteArray &pdata, const QString pkgname,
       _grade = 0;
   }
 
-  params.append("grade", _grade);
+  pParams.append("grade", _grade);
 
   if (_gradeMql && _gradeMql->isValid())
   {
     XSqlQuery grade;
-    grade = _gradeMql->toQuery(params);
+    grade = _gradeMql->toQuery(pParams);
 
     if (grade.first())
       _grade = grade.value(0).toInt();
@@ -220,12 +212,12 @@ int Loadable::writeToDB(const QByteArray &pdata, const QString pkgname,
       return -5;
     }
 
-    for (int i = 0; i < params.size(); i++)
+    for (int i = 0; i < pParams.size(); i++)
     {
-      if (params.at(i).name() == "grade")
+      if (pParams.at(i).name() == "grade")
       {
-        params.takeAt(i);
-        params.append("grade", _grade);
+        pParams.takeAt(i);
+        pParams.append("grade", _grade);
         break;
       }
     }
@@ -233,7 +225,7 @@ int Loadable::writeToDB(const QByteArray &pdata, const QString pkgname,
 
   XSqlQuery select;
   int itemid = -1;
-  select = _selectMql->toQuery(params);
+  select = _selectMql->toQuery(pParams);
 
   if (select.first())
     itemid = select.value(0).toInt();
@@ -243,13 +235,13 @@ int Loadable::writeToDB(const QByteArray &pdata, const QString pkgname,
     errMsg = _sqlerrtxt.arg(_filename).arg(err.driverText()).arg(err.databaseText());
     return -5;
   }
-  params.append("id", itemid);
+  pParams.append("id", itemid);
 
   XSqlQuery upsert;
   if (itemid >= 0)
-    upsert = _updateMql->toQuery(params);
+    upsert = _updateMql->toQuery(pParams);
   else
-    upsert = _insertMql->toQuery(params);
+    upsert = _insertMql->toQuery(pParams);
 
   if (upsert.first())
     itemid = upsert.value("id").toInt();
@@ -263,4 +255,14 @@ int Loadable::writeToDB(const QByteArray &pdata, const QString pkgname,
   }
 
   return itemid;
+}
+
+QByteArray Loadable::cleanData(QByteArray &pData)
+{
+  if (_stripBOM && pData.left(3) == "\xEF\xBB\xBF")
+  {
+    pData.remove(0, 3);
+    qWarning() << "Found BOM in" << _name << _comment;
+  }
+  return pData;
 }

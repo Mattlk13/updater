@@ -1,11 +1,22 @@
+/*
+ * This file is part of the xTuple ERP: PostBooks Edition, a free and
+ * open source Enterprise Resource Planning software suite,
+ * Copyright (c) 1999-2017 by OpenMFG LLC, d/b/a xTuple.
+ * It is licensed to you under the Common Public Attribution License
+ * version 1.0, the full text of which (including xTuple-specific Exhibits)
+ * is available at www.xtuple.com/CPAL.  By using this software, you agree
+ * to be bound by its terms.
+ */
+
 #include "loadqm.h"
+
 #include <QDomElement>
 #include <QSqlError>
-#include <QVariant>
-#include <limits.h>
-
-#include <iostream>
 #include <QString>
+#include <QVariant>
+
+#include "metasql.h"
+#include "xsqlquery.h"
 
 LoadQm::LoadQm(const QString &name, const int grade, const bool system, const QString &comment, const QString &filename)
        : Loadable("loadqm", name, grade, system, comment, filename)
@@ -26,7 +37,7 @@ LoadQm::LoadQm(const QDomElement & elem, const bool system, QStringList &msg, QL
   }
 }
 
-int LoadQm::writeToDB(const QByteArray &pdata, const QString pkgname, QString &errMsg)
+int LoadQm::writeToDB(QByteArray &pData, const QString pPkgname, QString &errMsg)
 {
   QString country = "";
   QString lang = "";
@@ -69,14 +80,14 @@ int LoadQm::writeToDB(const QByteArray &pdata, const QString pkgname, QString &e
 
   QString version;
   XSqlQuery getver;
-  if (pkgname.isEmpty())
+  if (pPkgname.isEmpty())
     getver.prepare("SELECT fetchmetrictext('ServerVersion') AS version;");
   else
   {
     getver.prepare("SELECT pkghead_version AS version "
                    "  FROM pkghead "
                    " WHERE pkghead_name=:name;");
-    getver.bindValue(":name", pkgname);
+    getver.bindValue(":name", pPkgname);
   }
   getver.exec();
 
@@ -112,8 +123,8 @@ int LoadQm::writeToDB(const QByteArray &pdata, const QString pkgname, QString &e
   params.append("lang", langid);
   if (!country.isEmpty())
     params.append("country", countryid);
-  params.append("data", QVariant(pdata));
+  params.append("data", QVariant(pData));
   params.append("version", version);
 
-  return Loadable::writeToDB(pdata, pkgname, errMsg, params);
+  return Loadable::writeToDB(pData, pPkgname, errMsg, params);
 }

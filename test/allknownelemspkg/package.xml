@@ -14,15 +14,6 @@
     set of package notes?
   </pkgnotes>
 
- <prerequisite type="Query" name="Checking SQL DB Server" >
-  <query>SELECT metric_value IN ('Manufacturing', 'PostBooks', 'Standard')
-         FROM metric
-         WHERE metric_name = 'Application';</query>
-  <message>
-    This package requires that it be applied against an xTuple ERP database.
-  </message>
- </prerequisite>
-
  <prerequisite type="license" name="sampleLicense" >
    <message>
      &lt;p>This is the content of a &lt;i>rich text&lt;/i> license.
@@ -31,10 +22,10 @@
    </message>
  </prerequisite>
 
- <script         file="initUpgrade" onerror="Ignore" />
+ <script         file="initUpgrade"  />
  <finalscript    file="finalize.sql" />
- <createtable    file="pkgtest.sql" name="pkgtest" onerror="Ignore" />
- <createtable    file="pkgtestitem.sql" name="pkgtestitem" onerror="Ignore" />
+ <createtable    file="pkgtest.sql" name="pkgtest"  />
+ <createtable    file="pkgtestitem.sql" name="pkgtestitem"  />
  <createfunction file="pkgtesttriggerfunction.sql" name="_pkgtestbefore" />
  <createfunction file="dropifexists.sql" name="dropifexists" />
  <createtrigger  file="pkgtesttrigger.sql" name="pkgtestbefore" />
