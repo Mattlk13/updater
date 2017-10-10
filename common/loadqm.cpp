@@ -103,7 +103,7 @@ int LoadQm::writeToDB(QByteArray &pData, const QString pPkgname, QString &errMsg
   _selectMql = new MetaSQLQuery("SELECT dict_id "
                                 "  FROM ONLY <? literal('tablename') ?> "
                                 " WHERE dict_lang_id=<? value('lang') ?> "
-                                "   AND dict_country_id=<? value('country') ?> "
+                                "   AND COALESCE(dict_country_id, -1)=COALESCE(<? value('country') ?>, -1) "
                                 "   AND dict_version=<? value('version') ?>;");
 
   _updateMql = new MetaSQLQuery("UPDATE <? literal('tablename') ?> "
