@@ -49,7 +49,6 @@ RC_FILE = rcloader.rc
 macx {
   RC_FILE = ../images/updater.icns
   QMAKE_INFO_PLIST = Info.plist
-  CONFIG -= c++11
 }
 
 FORMS   += loaderwindow.ui

@@ -74,6 +74,7 @@ unix:OPENRPTLIBEXT         = so
 unix:XTLIBEXT              = so
 macx:OPENRPTLIBEXT         = a
 macx:XTLIBEXT              = a
+macx:CONFIG               += c++11
 
 macx:exists(macx.pri) {
   include(macx.pri)
