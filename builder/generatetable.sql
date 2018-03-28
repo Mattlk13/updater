@@ -115,7 +115,6 @@ BEGIN
                        _seqschema, _seqname,
                        _seqschema, _seqname,
                        _seqschema, _seqname);
-    RAISE NOTICE 's %', _sequenceresult;
   END LOOP;
 
   _sequenceresult := _sequenceresult || E'END;\n$$;\n';
