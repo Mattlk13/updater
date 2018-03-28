@@ -86,38 +86,38 @@ BEGIN
   _result := _result || E'\n' || format('ALTER TABLE %s.%s ENABLE TRIGGER ALL;', pSchema, pTable);
 
   IF (_sequencecount > 0) THEN
-  -- now lets take care of any sequences that colums were set to use.
-  _sequenceresult := E'DO\n$$\nBEGIN';
+    -- now lets take care of any sequences that colums were set to use.
+    _sequenceresult := E'DO\n$$\nBEGIN';
 
-  FOREACH _seq IN ARRAY _sequences
-  LOOP
-    IF (_seq ~* '\.') THEN
-      _seqschema = split_part(_seq, '.', 1);
-      _seqname = split_part(_seq, '.', 2);
-    ELSE
-      _seqschema = 'public';
-      RAISE NOTICE 'seq %', _seq;
-      _seqname = _seq;
-    END IF;
-    _sequenceresult := _sequenceresult || E'\n'
-                       || format(E'IF NOT EXISTS (SELECT TRUE FROM information_schema.sequences where sequence_schema = %L AND sequence_name = %L)\n'
-                       ||        E'  THEN\n'
-                       ||        E'    CREATE SEQUENCE %s.%s\n'
-                       ||        E'      START WITH 1\n'
-                       ||        E'      INCREMENT BY 1\n'
-                       ||        E'      NO MINVALUE\n'
-                       ||        E'      NO MAXVALUE\n'
-                       ||        E'      CACHE 1;\n'
-                       ||        E'END IF;\n'
-                       ||        E'GRANT ALL ON SEQUENCE %s.%s TO admin;\n'
-                       ||        E'GRANT ALL ON SEQUENCE %s.%s TO xtrole;\n',
-                       _seqschema, _seqname,
-                       _seqschema, _seqname,
-                       _seqschema, _seqname,
-                       _seqschema, _seqname);
-  END LOOP;
+    FOREACH _seq IN ARRAY _sequences
+    LOOP
+      IF (_seq ~* '\.') THEN
+        _seqschema = split_part(_seq, '.', 1);
+        _seqname = split_part(_seq, '.', 2);
+      ELSE
+        _seqschema = 'public';
+        _seqname = _seq;
+      END IF;
+      _sequenceresult := _sequenceresult || E'\n'
+                         || format(E'IF NOT EXISTS (SELECT TRUE FROM information_schema.sequences where sequence_schema = %L AND sequence_name = %L)\n'
+                         ||        E'  THEN\n'
+                         ||        E'    CREATE SEQUENCE %s.%s\n'
+                         ||        E'      START WITH 1\n'
+                         ||        E'      INCREMENT BY 1\n'
+                         ||        E'      NO MINVALUE\n'
+                         ||        E'      NO MAXVALUE\n'
+                         ||        E'      CACHE 1;\n'
+                         ||        E'END IF;\n'
+                         ||        E'GRANT ALL ON SEQUENCE %s.%s TO admin;\n'
+                         ||        E'GRANT ALL ON SEQUENCE %s.%s TO xtrole;\n',
+                         _seqschema, _seqname,
+                         _seqschema, _seqname,
+                         _seqschema, _seqname,
+                         _seqschema, _seqname);
+    END LOOP;
 
-  _sequenceresult := _sequenceresult || E'END;\n$$;\n';
+    _sequenceresult := _sequenceresult || E'END;\n$$;\n';
+  END IF;
 
   -- tack on the table comment if there is one
   _commentresult := _commentresult || E'\n' || format('COMMENT ON TABLE %s.%s IS %L;',
@@ -129,7 +129,7 @@ BEGIN
                                                                  WHERE st.relname = pTable
                                                                    AND st.schemaname = pSchema
                                                                    AND pgd.objsubid = 0)::text, ''));
-  END IF;
+
   RETURN NEXT (COALESCE(_sequenceresult, '') || E'\n' || _result || E'\n' || COALESCE(_commentresult, ''));
 
 END;
