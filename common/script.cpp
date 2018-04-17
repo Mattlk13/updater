@@ -1,7 +1,7 @@
 /*
  * This file is part of the xTuple ERP: PostBooks Edition, a free and
  * open source Enterprise Resource Planning software suite,
- * Copyright (c) 1999-2015 by OpenMFG LLC, d/b/a xTuple.
+ * Copyright (c) 1999-2017 by OpenMFG LLC, d/b/a xTuple.
  * It is licensed to you under the Common Public Attribution License
  * version 1.0, the full text of which (including xTuple-specific Exhibits)
  * is available at www.xtuple.com/CPAL.  By using this software, you agree
@@ -24,16 +24,20 @@ QString Script::_sqlerrtxt = TR("The following error was encountered "
                                          "database:<br><pre>%2<br>%3</pre>");
 
 Script::Script(const QString & name, OnError onError, const QString & comment)
-  : _name(name), _comment(comment), _onError(onError)
+  : _name(name), _comment(comment), _onError(onError), _stripBOM(true)
 {
 }
 
 Script::Script(const QDomElement & elem, QStringList &msg, QList<bool> &fatal)
+  : _onError(Script::Default), _stripBOM(true)
 {
   _name = elem.attribute("name");
   if (elem.hasAttribute("file"))
     _name = elem.attribute("file");
-  _onError = nameToOnError(elem.attribute("onerror"));
+
+  if (elem.hasAttribute("onerror"))
+    _onError = nameToOnError(elem.attribute("onerror"));
+
   _comment = elem.text();
 
   if (_name.isEmpty())
@@ -100,19 +104,20 @@ QStringList Script::onErrorList(bool includeDefault)
   return list;
 }
 
-int Script::writeToDB(const QByteArray &pdata, const QString annotation, ParameterList &params, QString &errMsg)
+int Script::writeToDB(QByteArray &pData, const QString pAnnotation, ParameterList &pParams, QString &errMsg)
 {
-  Q_UNUSED(params);
+  Q_UNUSED(pParams);
   if (DEBUG)
-    qDebug() << "Script::writeToDb(" << pdata << annotation << "params" << errMsg
+    qDebug() << "Script::writeToDb(" << pData << pAnnotation << "params" << errMsg
              << ") with onError" << _onError;
-  if (pdata.isEmpty())
+  if (pData.isEmpty())
   {
     errMsg = TR("The file %1 is empty.").arg(filename());
     return -1;
   }
 
-  const char *data = pdata.data();
+  cleanData(pData);
+  char *data = pData.data();
   XSqlQuery create;
   create.exec(QString::fromLocal8Bit(data));
   if (create.lastError().type() != QSqlError::NoError)
@@ -124,4 +129,14 @@ int Script::writeToDB(const QByteArray &pdata, const QString annotation, Paramet
   }
 
   return 0;
+}
+
+QByteArray Script::cleanData(QByteArray &pData)
+{
+  if (_stripBOM && pData.left(3) == "\xEF\xBB\xBF")
+  {
+    pData.remove(0, 3);
+    qWarning() << "Found BOM in" << _name << _comment;
+  }
+  return pData;
 }
