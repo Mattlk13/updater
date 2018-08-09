@@ -1,7 +1,7 @@
 /*
  * This file is part of the xTuple ERP: PostBooks Edition, a free and
  * open source Enterprise Resource Planning software suite,
- * Copyright (c) 1999-2017 by OpenMFG LLC, d/b/a xTuple.
+ * Copyright (c) 1999-2018 by OpenMFG LLC, d/b/a xTuple.
  * It is licensed to you under the Common Public Attribution License
  * version 1.0, the full text of which (including xTuple-specific Exhibits)
  * is available at www.xtuple.com/CPAL.  By using this software, you agree
@@ -50,10 +50,10 @@ int CreateTrigger::writeToDB(QByteArray &pdata, const QString pkgname,
 
   _oidMql = new MetaSQLQuery("SELECT pg_trigger.oid AS oid "
                              "FROM pg_trigger, pg_class, pg_namespace "
-                             "WHERE ((tgname=<? value('name') ?>)"
-                             "  AND  (tgrelid=pg_class.oid)"
-                             "  AND  (relnamespace=pg_namespace.oid)"
-                             "  AND  (nspname=<? value('schema') ?>));");
+                             "WHERE tgname=LOWER(<? value('name') ?>) "
+                             "  AND tgrelid=pg_class.oid"
+                             "  AND relnamespace=pg_namespace.oid"
+                             "  AND nspname IN ('public', <? value('schema') ?>);");
   int returnVal = CreateDBObj::writeToDB(pdata, pkgname, params, errMsg);
 
   delete _oidMql;
