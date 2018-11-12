@@ -17,8 +17,7 @@ item listed below may be found on our community website, www.xtuple.org.
 
 ### Bug Fixes
 
-- Fixed issue #[33613](http://www.xtuple.org/xtincident/view/bugs/33613) _Updater fails to create t
-riggers if trigger name is not lower case._
+- Fixed issue #[33613](http://www.xtuple.org/xtincident/view/bugs/33613) _Updater fails to create triggers if trigger name is not lower case._
 
 # xTuple Updater Release Notes
 ## Version 2.5.0RC - March, 2018
