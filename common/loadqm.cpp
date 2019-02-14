@@ -39,6 +39,13 @@ LoadQm::LoadQm(const QDomElement & elem, const bool system, QStringList &msg, QL
 
 int LoadQm::writeToDB(QByteArray &pData, const QString pPkgname, QString &errMsg)
 {
+  XSqlQuery check("SELECT 1 "
+                  "  FROM pg_class "
+                  " WHERE relname = 'dict' "
+                  "   AND relkind='r' ");
+  if (!check.first())
+    return 0;
+
   QString country = "";
   QString lang = "";
   int langid = -1;
