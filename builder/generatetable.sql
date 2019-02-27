@@ -3,7 +3,7 @@ CREATE OR REPLACE FUNCTION xt.generatetable(
     ptable text)
   RETURNS SETOF text AS
 $BODY$
--- Copyright (c) 1999-2018 by OpenMFG LLC, d/b/a xTuple. 
+-- Copyright (c) 1999-2019 by OpenMFG LLC, d/b/a xTuple. 
 -- See www.xtuple.com/EULA for the full text of the software license.
 DECLARE
 _result TEXT := '';
@@ -141,7 +141,7 @@ ALTER FUNCTION xt.generatetable(text, text)
 CREATE OR REPLACE FUNCTION xt.generatetables(pschema text)
   RETURNS SETOF text AS
 $BODY$
--- Copyright (c) 1999-2018 by OpenMFG LLC, d/b/a xTuple. 
+-- Copyright (c) 1999-2019 by OpenMFG LLC, d/b/a xTuple. 
 -- See www.xtuple.com/EULA for the full text of the software license.
 DECLARE
 _result TEXT := '';
