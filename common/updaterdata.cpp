@@ -16,5 +16,5 @@ QString Updater::build     = QObject::tr("%1 %2").arg(__DATE__, __TIME__);
 QString Updater::copyright = QObject::tr("Copyright (c) 2004-2019 OpenMFG, LLC., d/b/a xTuple.");
 bool    Updater::loggedIn  = false;
 QString Updater::name      = QObject::tr("Update Manager");
-QString Updater::version   = QObject::tr("2.5.1");
+QString Updater::version   = QObject::tr("2.5.2");
 
