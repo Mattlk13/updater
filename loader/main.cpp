@@ -129,6 +129,8 @@ int main(int argc, char* argv[])
   handler->setAcceptDefaults(autoRunArg && acceptDefaults);
 
   ParameterList params;
+  params.append("earliest", "9.3.0");
+  params.append("latest", "11.0.0");
   params.append("name",      Updater::name);
   params.append("copyright", Updater::copyright);
   params.append("version",   Updater::version);
