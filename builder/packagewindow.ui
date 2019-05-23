@@ -744,7 +744,7 @@ to be bound by its terms.</comment>
   <customwidget>
    <class>QGroupBox</class>
    <extends>QGroupBox</extends>
-   <header>QtSupport/QGroupBox</header>
+   <header>QGroupBox</header>
    <container>1</container>
   </customwidget>
   <customwidget>
