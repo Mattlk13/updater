@@ -25,21 +25,23 @@ MOC_DIR     = tmp
 UI_DIR      = tmp
 
 QMAKE_LIBDIR += $${UPDATER_LIBDIR} $${OPENRPT_LIBDIR} $${XTUPLE_LIBDIR}
-LIBS += -lxtuplecommon -lupdatercommon -lopenrptcommon -lrenderer -lMetaSQL
+LIBS += -lxtuplecommon -lupdatercommon -lopenrptcommon -lrenderer -lMetaSQL -lqzint
 LIBS += -lz
 
 win32-msvc* {
-  PRE_TARGETDEPS += $${UPDATER_LIBDIR}/updatercommon.lib          \
-                    $${XTUPLE_LIBDIR}/xtuplecommon.$${XTLIBEXT} \
-                    $${OPENRPT_LIBDIR}/MetaSQL.$${OPENRPTLIBEXT} \
+  PRE_TARGETDEPS += $${UPDATER_LIBDIR}/updatercommon.lib               \
+                    $${XTUPLE_LIBDIR}/xtuplecommon.$${XTLIBEXT}        \
+                    $${OPENRPT_LIBDIR}/MetaSQL.$${OPENRPTLIBEXT}       \
                     $${OPENRPT_LIBDIR}/openrptcommon.$${OPENRPTLIBEXT} \
-                    $${OPENRPT_LIBDIR}/renderer.$${OPENRPTLIBEXT}
+                    $${OPENRPT_LIBDIR}/renderer.$${OPENRPTLIBEXT}      \
+                    $${OPENRPT_LIBDIR}/qzint.$${OPENRPTLIBEXT}
 } else {
-  PRE_TARGETDEPS += $${UPDATER_LIBDIR}/libupdatercommon.a          \
-                    $${XTUPLE_LIBDIR}/libxtuplecommon.$${XTLIBEXT} \
-                    $${OPENRPT_LIBDIR}/libMetaSQL.$${OPENRPTLIBEXT} \
+  PRE_TARGETDEPS += $${UPDATER_LIBDIR}/libupdatercommon.a                 \
+                    $${XTUPLE_LIBDIR}/libxtuplecommon.$${XTLIBEXT}        \
+                    $${OPENRPT_LIBDIR}/libMetaSQL.$${OPENRPTLIBEXT}       \
                     $${OPENRPT_LIBDIR}/libopenrptcommon.$${OPENRPTLIBEXT} \
-                    $${OPENRPT_LIBDIR}/librenderer.$${OPENRPTLIBEXT}
+                    $${OPENRPT_LIBDIR}/librenderer.$${OPENRPTLIBEXT}      \
+                    $${OPENRPT_LIBDIR}/libqzint.$${OPENRPTLIBEXT}
 }
 
 DESTDIR = ../bin

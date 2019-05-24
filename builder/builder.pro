@@ -20,17 +20,19 @@ isEqual(QT_MAJOR_VERSION, 5) {
 DESTDIR = ../bin
 
 QMAKE_LIBDIR += $${UPDATER_LIBDIR} $${OPENRPT_LIBDIR} $${XTUPLE_LIBDIR}
-LIBS += -lxtuplecommon -lupdatercommon -lopenrptcommon -lrenderer -lMetaSQL
+LIBS += -lxtuplecommon -lupdatercommon -lopenrptcommon -lrenderer -lMetaSQL -lqzint
 win32-msvc* {
-  PRE_TARGETDEPS += $${UPDATER_LIBDIR}/updatercommon.lib          \
+  PRE_TARGETDEPS += $${UPDATER_LIBDIR}/updatercommon.lib               \
                     $${OPENRPT_LIBDIR}/MetaSQL.$${OPENRPTLIBEXT}       \
                     $${OPENRPT_LIBDIR}/openrptcommon.$${OPENRPTLIBEXT} \
-                    $${OPENRPT_LIBDIR}/renderer.$${OPENRPTLIBEXT}
+                    $${OPENRPT_LIBDIR}/renderer.$${OPENRPTLIBEXT}      \
+                    $${OPENRPT_LIBDIR}/qzint.$${OPENRPTLIBEXT}
 } else {
-  PRE_TARGETDEPS += $${UPDATER_LIBDIR}/libupdatercommon.a \
+  PRE_TARGETDEPS += $${UPDATER_LIBDIR}/libupdatercommon.a                 \
                     $${OPENRPT_LIBDIR}/libMetaSQL.$${OPENRPTLIBEXT}       \
                     $${OPENRPT_LIBDIR}/libopenrptcommon.$${OPENRPTLIBEXT} \
-                    $${OPENRPT_LIBDIR}/librenderer.$${OPENRPTLIBEXT}
+                    $${OPENRPT_LIBDIR}/librenderer.$${OPENRPTLIBEXT}      \
+                    $${OPENRPT_LIBDIR}/libqzint.$${OPENRPTLIBEXT}
 }
 
 MOC_DIR = tmp
